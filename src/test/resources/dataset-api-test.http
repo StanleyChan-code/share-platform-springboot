@@ -1,0 +1,85 @@
+@datasetId=0008f32d-ac17-44bc-9a98-77256188febc
+### 获取所有数据集
+GET http://localhost:8080/api/datasets
+Accept: application/json
+
+### 根据ID获取特定数据集
+GET http://localhost:8080/api/datasets/{{datasetId}}
+Accept: application/json
+
+### 创建新数据集
+POST http://localhost:8080/api/datasets
+Content-Type: application/json
+
+{
+  "titleCn": "测试数据集",
+  "description": "这是一个测试数据集",
+  "type": "cohort",
+  "category": "医学研究",
+  "providerId": "550e8400-e29b-41d4-a716-446655440000",
+  "supervisorId": "550e8400-e29b-41d4-a716-446655440001",
+  "startDate": "2020-01-01T00:00:00Z",
+  "endDate": "2022-12-31T23:59:59Z",
+  "recordCount": 1000,
+  "variableCount": 50,
+  "keywords": ["医学", "健康", "研究"],
+  "subjectAreaId": "550e8400-e29b-41d4-a716-446655440002",
+  "fileUrl": "https://example.com/dataset.csv",
+  "dataDictUrl": "https://example.com/datadict.pdf",
+  "approved": true,
+  "published": true,
+  "shareAllData": false,
+  "datasetLeader": "张三",
+  "dataCollectionUnit": "某某研究所",
+  "contactPerson": "李四",
+  "contactInfo": "lisi@example.com",
+  "demographicFields": "{\"age\": \"integer\", \"gender\": \"string\"}",
+  "outcomeFields": "{\"result\": \"boolean\"}",
+  "termsAgreementUrl": "https://example.com/terms.pdf",
+  "samplingMethod": "随机抽样",
+  "versionNumber": "1.0",
+  "firstPublishedDate": "2023-01-01T00:00:00Z",
+  "currentVersionDate": "2023-01-01T00:00:00Z",
+  "parentDatasetId": "550e8400-e29b-41d4-a716-446655440003",
+  "principalInvestigator": "王五"
+}
+
+### 更新数据集
+PUT http://localhost:8080/api/datasets/{{datasetId}}
+Content-Type: application/json
+
+{
+  "titleCn": "更新后的测试数据集",
+  "description": "这是更新后的测试数据集描述",
+  "type": "case_control",
+  "category": "生物医学研究",
+  "providerId": "550e8400-e29b-41d4-a716-446655440000",
+  "supervisorId": "550e8400-e29b-41d4-a716-446655440001",
+  "startDate": "2020-01-01T00:00:00Z",
+  "endDate": "2022-12-31T23:59:59Z",
+  "recordCount": 2000,
+  "variableCount": 60,
+  "keywords": ["医学", "健康", "研究", "更新"],
+  "subjectAreaId": "550e8400-e29b-41d4-a716-446655440002",
+  "fileUrl": "https://example.com/dataset-updated.csv",
+  "dataDictUrl": "https://example.com/datadict-updated.pdf",
+  "approved": true,
+  "published": true,
+  "shareAllData": true,
+  "datasetLeader": "张三丰",
+  "dataCollectionUnit": "某某生物研究所",
+  "contactPerson": "李四海",
+  "contactInfo": "lisihai@example.com",
+  "demographicFields": "{\"age\": \"integer\", \"gender\": \"string\", \"height\": \"float\"}",
+  "outcomeFields": "{\"result\": \"boolean\", \"score\": \"integer\"}",
+  "termsAgreementUrl": "https://example.com/terms-updated.pdf",
+  "samplingMethod": "分层随机抽样",
+  "versionNumber": "2.0",
+  "firstPublishedDate": "2023-01-01T00:00:00Z",
+  "currentVersionDate": "2023-06-01T00:00:00Z",
+  "parentDatasetId": "550e8400-e29b-41d4-a716-446655440003",
+  "principalInvestigator": "王五湖"
+}
+
+### 删除数据集
+DELETE http://localhost:8080/api/datasets/{{datasetId}}
