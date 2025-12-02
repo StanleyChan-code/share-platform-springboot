@@ -13,6 +13,7 @@ import java.util.UUID;
 @Table(name = "applications")
 public class Application {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "dataset_id", nullable = false)

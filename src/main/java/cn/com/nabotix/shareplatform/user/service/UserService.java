@@ -1,11 +1,11 @@
 package cn.com.nabotix.shareplatform.user.service;
 
-import cn.com.nabotix.shareplatform.config.SecurityConfig;
 import cn.com.nabotix.shareplatform.user.entity.User;
-import cn.com.nabotix.shareplatform.user.entity.UserRoleEntity;
-import cn.com.nabotix.shareplatform.enums.UserRole;
+import cn.com.nabotix.shareplatform.user.entity.UserAuthorityEntity;
+import cn.com.nabotix.shareplatform.enums.UserAuthority;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
-import cn.com.nabotix.shareplatform.user.repository.UserRoleRepository;
+import cn.com.nabotix.shareplatform.user.repository.UserAuthorityRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,12 +22,12 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final SecurityConfig.PasswordEncoder passwordEncoder;
+    private final UserAuthorityRepository userAuthorityRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, UserRoleRepository userRoleRepository, SecurityConfig.PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.userRoleRepository = userRoleRepository;
+        this.userAuthorityRepository = userAuthorityRepository;
         this.passwordEncoder = passwordEncoder;
     }
     
@@ -47,46 +47,46 @@ public class UserService {
      * @param userId 用户ID
      * @return 用户的所有角色列表
      */
-    public List<UserRole> getUserRoles(UUID userId) {
-        List<UserRoleEntity> userRoleEntities = userRoleRepository.findByUserId(userId);
-        List<UserRole> roles = new ArrayList<>();
+    public List<UserAuthority> getUserAuthorities(UUID userId) {
+        List<UserAuthorityEntity> userAuthorityEntities = userAuthorityRepository.findByUserId(userId);
+        List<UserAuthority> authorities = new ArrayList<>();
         
-        for (UserRoleEntity entity : userRoleEntities) {
-            roles.add(entity.getRole());
+        for (UserAuthorityEntity entity : userAuthorityEntities) {
+            authorities.add(entity.getAuthority());
         }
         
-        return roles;
+        return authorities;
     }
 
     /**
      * 为用户添加角色
      *
      * @param userId 用户ID
-     * @param role 要添加的角色
+     * @param authority 要添加的角色
      * @param createdBy 创建者ID
      */
-    public void addUserRole(UUID userId, UserRole role, UUID createdBy) {
-        UserRoleEntity userRoleEntity = new UserRoleEntity();
-        userRoleEntity.setUserId(userId);
-        userRoleEntity.setRole(role);
-        userRoleEntity.setCreatedBy(createdBy);
-        userRoleEntity.setCreatedAt(Instant.now());
+    public void addUserAuthority(UUID userId, UserAuthority authority, UUID createdBy) {
+        UserAuthorityEntity userAuthorityEntity = new UserAuthorityEntity();
+        userAuthorityEntity.setUserId(userId);
+        userAuthorityEntity.setAuthority(authority);
+        userAuthorityEntity.setCreatedBy(createdBy);
+        userAuthorityEntity.setCreatedAt(Instant.now());
         
-        userRoleRepository.save(userRoleEntity);
+        userAuthorityRepository.save(userAuthorityEntity);
     }
 
     /**
      * 移除用户的指定角色
      *
      * @param userId 用户ID
-     * @param role 要移除的角色
+     * @param authority 要移除的角色
      */
-    public void removeUserRole(UUID userId, UserRole role) {
-        List<UserRoleEntity> userRoleEntities = userRoleRepository.findByUserId(userId);
+    public void removeUserAuthority(UUID userId, UserAuthority authority) {
+        List<UserAuthorityEntity> authorityEntityList = userAuthorityRepository.findByUserId(userId);
         
-        for (UserRoleEntity entity : userRoleEntities) {
-            if (entity.getRole() == role) {
-                userRoleRepository.delete(entity);
+        for (UserAuthorityEntity entity : authorityEntityList) {
+            if (entity.getAuthority() == authority) {
+                userAuthorityRepository.delete(entity);
             }
         }
     }
@@ -97,10 +97,25 @@ public class UserService {
      * @param userId 用户ID
      * @return 包含用户基本信息和角色列表的用户对象
      */
-    public User getUserWithRoles(UUID userId) {
+    public User getUserByUserId(UUID userId) {
         User user = userRepository.findById(userId).orElse(null);
-        // 注意：这里返回的User对象不包含role字段，因为用户现在可以有多个角色
-        // 需要调用getUserRoles方法单独获取用户的所有角色
+        if (user != null){
+            user.setPassword(null);
+        }
+        return user;
+    }
+    
+    /**
+     * 根据手机号获取用户
+     *
+     * @param phone 手机号
+     * @return 用户对象
+     */
+    public User getUserByPhone(String phone) {
+        User user = userRepository.findByPhone(phone).orElse(null);
+        if (user != null){
+            user.setPassword(null);
+        }
         return user;
     }
 

@@ -40,12 +40,6 @@ public class DatasetService {
         // 设置创建和更新时间
         dataset.setCreatedAt(Instant.now());
         dataset.setUpdatedAt(Instant.now());
-        
-        // 如果没有设置ID，则生成一个新的UUID
-        if (dataset.getId() == null) {
-            dataset.setId(UUID.randomUUID());
-        }
-        
         return datasetRepository.save(dataset);
     }
 

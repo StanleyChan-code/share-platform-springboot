@@ -15,6 +15,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 @Table(name = "datasets")
 public class Dataset {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "title_cn", nullable = false)

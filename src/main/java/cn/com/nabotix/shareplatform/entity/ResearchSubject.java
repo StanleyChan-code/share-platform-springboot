@@ -11,6 +11,7 @@ import java.util.UUID;
 @Table(name = "research_subjects")
 public class ResearchSubject {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false)

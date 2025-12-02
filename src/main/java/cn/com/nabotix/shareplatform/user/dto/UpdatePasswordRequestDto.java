@@ -10,7 +10,7 @@ import lombok.Data;
  */
 @Data
 public class UpdatePasswordRequestDto {
-    private String phoneNumber;
+    private String phone;
     private String verificationCode;
     private String newPassword;
 }

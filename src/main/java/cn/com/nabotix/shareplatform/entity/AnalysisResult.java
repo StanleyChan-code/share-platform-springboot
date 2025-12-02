@@ -11,6 +11,7 @@ import java.util.UUID;
 @Table(name = "analysis_results")
 public class AnalysisResult {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "dataset_id", nullable = false)

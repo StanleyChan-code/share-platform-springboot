@@ -1,4 +1,4 @@
-package cn.com.nabotix.shareplatform.entity;
+package cn.com.nabotix.shareplatform.institution.entity;
 
 import cn.com.nabotix.shareplatform.enums.IdType;
 import cn.com.nabotix.shareplatform.enums.InstitutionType;
@@ -8,15 +8,18 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * 机构实体类
+ * 用于表示平台上的各类机构信息
+ *
+ * @author 陈雍文
+ */
 @Data
 @Entity
 @Table(name = "institutions")
 public class Institution {
     @Id
     private UUID id;
-
-    @Column(nullable = false)
-    private String username;
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
@@ -50,7 +53,4 @@ public class Institution {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    @Column(name = "user_id")
-    private UUID userId;
 }

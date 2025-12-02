@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 @SpringBootApplication(scanBasePackages = {"cn.com.nabotix.shareplatform"})
-@EnableRedisRepositories(basePackages = {"cn.com.nabotix.shareplatform.user.repository", "cn.com.nabotix.shareplatform.dataset.repository"})
-@EnableJpaRepositories(basePackages = {"cn.com.nabotix.shareplatform.user.repository", "cn.com.nabotix.shareplatform.dataset.repository"})
+@EnableRedisRepositories(basePackages = {"cn.com.nabotix.shareplatform.user.repository"})
+@EnableJpaRepositories(basePackages = {"cn.com.nabotix.shareplatform"})
 public class SharePlatformApplication {
 
     public static void main(String[] args) {

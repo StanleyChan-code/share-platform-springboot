@@ -10,6 +10,7 @@ import java.util.UUID;
 @Table(name = "audit_log_entries")
 public class AuditLogEntry {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "instance_id")

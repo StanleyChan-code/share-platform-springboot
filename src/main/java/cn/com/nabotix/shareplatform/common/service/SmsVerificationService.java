@@ -33,13 +33,13 @@ public class SmsVerificationService {
     /**
      * 生成并发送短信验证码（模拟）
      *
-     * @param phoneNumber 手机号码
+     * @param phone 手机号码
      * @param businessType 业务类型（如REGISTER, LOGIN, UPDATE_PASSWORD等）
      * @return 验证码
      */
-    public String generateAndSendVerificationCode(String phoneNumber, String businessType) {
+    public String generateAndSendVerificationCode(String phone, String businessType) {
         // 检查是否在一分钟内重复请求
-        String limitKey = SMS_REQUEST_LIMIT_PREFIX + businessType + ":" + phoneNumber;
+        String limitKey = SMS_REQUEST_LIMIT_PREFIX + businessType + ":" + phone;
         String lastRequestTime = redisTemplate.opsForValue().get(limitKey);
         
         if (lastRequestTime != null) {
@@ -55,10 +55,10 @@ public class SmsVerificationService {
         String verificationCode = String.format("%06d", (int) (Math.random() * 1000000));
 
         // 清除该手机号下所有业务类型的旧验证码，确保一个手机号只有一个有效验证码
-        clearAllVerificationCodesForPhone(phoneNumber);
+        clearAllVerificationCodesForPhone(phone);
 
         // 将验证码存储到Redis中，设置过期时间，加上业务类型区分
-        String key = VERIFICATION_CODE_PREFIX + businessType + ":" + phoneNumber;
+        String key = VERIFICATION_CODE_PREFIX + businessType + ":" + phone;
         redisTemplate.opsForValue().set(key, verificationCode, VERIFICATION_CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
         
         // 记录本次请求时间，用于频率限制
@@ -66,33 +66,23 @@ public class SmsVerificationService {
                 SMS_REQUEST_INTERVAL_MINUTES, TimeUnit.MINUTES);
 
         // 实际应用中，这里应该调用短信服务API发送验证码到用户手机
-        // 例如：smsService.sendSms(phoneNumber, "您的验证码是：" + verificationCode);
+        // 例如：smsService.sendSms(phone, "您的验证码是：" + verificationCode);
 
         // 返回验证码，实际开发中不应返回，仅用于测试或日志记录
         return verificationCode;
-    }
-    
-    /**
-     * 生成并发送短信验证码（模拟）- 默认为注册业务类型
-     *
-     * @param phoneNumber 手机号码
-     * @return 验证码
-     */
-    public String generateAndSendVerificationCode(String phoneNumber) {
-        return generateAndSendVerificationCode(phoneNumber, "REGISTER");
     }
 
     /**
      * 验证手机号和验证码是否匹配
      *
-     * @param phoneNumber      手机号码
+     * @param phone      手机号码
      * @param verificationCode 用户输入的验证码
      * @param businessType     业务类型（如REGISTER, LOGIN, UPDATE_PASSWORD等）
      * @return 验证结果
      */
-    public boolean verifyCode(String phoneNumber, String verificationCode, String businessType) {
-        String key = VERIFICATION_CODE_PREFIX + businessType + ":" + phoneNumber;
-        String limitKey = SMS_REQUEST_LIMIT_PREFIX + businessType + ":" + phoneNumber;
+    public boolean verifyCode(String phone, String verificationCode, String businessType) {
+        String key = VERIFICATION_CODE_PREFIX + businessType + ":" + phone;
+        String limitKey = SMS_REQUEST_LIMIT_PREFIX + businessType + ":" + phone;
         String storedCode = redisTemplate.opsForValue().get(key);
 
         if (storedCode == null) {
@@ -112,25 +102,14 @@ public class SmsVerificationService {
     }
     
     /**
-     * 验证手机号和验证码是否匹配 - 默认为注册业务类型
-     *
-     * @param phoneNumber      手机号码
-     * @param verificationCode 用户输入的验证码
-     * @return 验证结果
-     */
-    public boolean verifyCode(String phoneNumber, String verificationCode) {
-        return verifyCode(phoneNumber, verificationCode, "REGISTER");
-    }
-    
-    /**
      * 清除指定手机号和业务类型的验证码
      *
-     * @param phoneNumber 手机号码
+     * @param phone 手机号码
      * @param businessType 业务类型
      */
-    public void clearVerificationCode(String phoneNumber, String businessType) {
-        String key = VERIFICATION_CODE_PREFIX + businessType + ":" + phoneNumber;
-        String limitKey = SMS_REQUEST_LIMIT_PREFIX + businessType + ":" + phoneNumber;
+    public void clearVerificationCode(String phone, String businessType) {
+        String key = VERIFICATION_CODE_PREFIX + businessType + ":" + phone;
+        String limitKey = SMS_REQUEST_LIMIT_PREFIX + businessType + ":" + phone;
         redisTemplate.delete(key);
         redisTemplate.delete(limitKey);
     }
@@ -138,12 +117,12 @@ public class SmsVerificationService {
     /**
      * 清除指定手机号下所有业务类型的验证码
      *
-     * @param phoneNumber 手机号码
+     * @param phone 手机号码
      */
-    private void clearAllVerificationCodesForPhone(String phoneNumber) {
+    private void clearAllVerificationCodesForPhone(String phone) {
         // 查找该手机号对应的所有业务类型的验证码key并删除
-        Set<String> codeKeys = redisTemplate.keys(VERIFICATION_CODE_PREFIX + "*:" + phoneNumber);
-        Set<String> limitKeys = redisTemplate.keys(SMS_REQUEST_LIMIT_PREFIX + "*:" + phoneNumber);
+        Set<String> codeKeys = redisTemplate.keys(VERIFICATION_CODE_PREFIX + "*:" + phone);
+        Set<String> limitKeys = redisTemplate.keys(SMS_REQUEST_LIMIT_PREFIX + "*:" + phone);
         
         if (!codeKeys.isEmpty()) {
             redisTemplate.delete(codeKeys);
