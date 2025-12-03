@@ -1,8 +1,8 @@
-@phone = 13800000099
+@phone = 13800000201
 @phone1 = 13812345678
 @admin_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
 
-@institution_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDA5OSIsImlhdCI6MTc2NDY3MjE1NSwiZXhwIjoxNzY2NTM2MTU1fQ.E8-XnMlNWgoiRMAdBYvilzuXAJzY--agNSSF2yzifQL7VKV4ct9bx22Fmzq-6rpG
+@institution_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDcyOTg5MCwiZXhwIjoxNzY2NTkzODkwfQ.aBIvN0a1KZ1_hzijW7LmupYnvKm7yMEWlobMOtQj_w1nHXm-z0xgGJPXTQWzlBgm
 
 @auth_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDEzODAwMiIsImlhdCI6MTc2NDY3MTIzNCwiZXhwIjoxNzY2NTM1MjM0fQ.SK-ixBne4YuvdQtSpLTin2niXS8z2MV_L700Pck9G2bs_-EWLixWPd2Vsbk35tAj
 
@@ -31,7 +31,7 @@ Content-Type: application/json
 
 {
   "phone": {{phone}},
-  "verificationCode": "327317",
+  "verificationCode": "704425",
   "loginType": "VERIFICATION_CODE"
 }
 
@@ -51,7 +51,7 @@ Authorization: Bearer {{auth_token}}
 
 ### 根据用户ID获取用户信息（需要在user_authority添加管理员权限记录）
 GET http://localhost:8080/api/users/73ae0020-822c-4296-ad0e-1436b43b8875
-Authorization: Bearer {{auth_token}}
+Authorization: Bearer {{admin_token}}
 
 ### 登出
 POST http://localhost:8080/api/auth/logout

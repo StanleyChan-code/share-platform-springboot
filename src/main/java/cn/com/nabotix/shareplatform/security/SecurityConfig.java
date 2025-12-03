@@ -51,7 +51,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-verification-code").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("platform_admin")
+                        .requestMatchers("/api/manage/datasets/**").hasAnyAuthority("platform_admin", "institution_supervisor", "dataset_uploader")
                         .requestMatchers("/api/institutions/**").permitAll()
+                        .requestMatchers("/api/datasets/**").permitAll()
+                        .requestMatchers("/api/research-subjects/**").permitAll()
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/**/*.css", "/**/*.js").permitAll()
                         .anyRequest().authenticated()
                 )

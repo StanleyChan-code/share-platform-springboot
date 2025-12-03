@@ -40,21 +40,25 @@ public class UserManageController {
     @PostMapping
     public ResponseEntity<ApiResponseDto<User>> createUser(@RequestBody UserCreateRequestDto userCreateRequest) {
         try {
+            if (userService.getUserByPhone(userCreateRequest.getPhone()) != null) {
+                return ResponseEntity.status(400).body(ApiResponseDto.error("手机号已存在"));
+            }
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
             // 创建用户
             User user = new User();
-            user.setId(UUID.randomUUID());
             user.setUsername(userCreateRequest.getUsername());
             user.setRealName(userCreateRequest.getRealName());
             user.setPhone(userCreateRequest.getPhone());
             user.setEmail(userCreateRequest.getEmail());
             user.setPassword(userCreateRequest.getPassword());
             user.setInstitutionId(userCreateRequest.getInstitutionId());
+            user.setSupervisorId(userDetails.getId());
 
             User createdUser = userService.createUser(user);
 
             // 为用户添加机构管理员权限
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
             userService.addUserAuthority(
                     createdUser.getId(), 
@@ -69,4 +73,6 @@ public class UserManageController {
             return ResponseEntity.status(500).body(ApiResponseDto.error("用户创建失败: " + e.getMessage()));
         }
     }
+
+    // todo: 这里需要增加用户权限控制，去除掉上面那个方法的默认添加机构管理员权限
 }

@@ -140,6 +140,11 @@ public class UserService {
      * @return 保存后的用户对象
      */
     public User createUser(User user) {
+        // 检查手机号码是否已存在
+        if (userRepository.existsByPhone(user.getPhone())) {
+            return null;
+        }
+
         // 加密密码
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(Instant.now());

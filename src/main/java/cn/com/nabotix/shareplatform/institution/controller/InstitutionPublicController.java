@@ -31,21 +31,28 @@ public class InstitutionPublicController {
     /**
      * 获取所有机构列表
      * 所有用户均可访问
+     * 只返回已验证的机构
      */
     @GetMapping
     public ResponseEntity<ApiResponseDto<List<InstitutionDto>>> getAllInstitutions() {
-        List<InstitutionDto> institutions = institutionService.getAllInstitutions();
+        List<InstitutionDto> institutions = institutionService.getVerifiedInstitutions();
         return ResponseEntity.ok(ApiResponseDto.success(institutions, "获取机构列表成功"));
     }
 
     /**
      * 根据ID获取特定机构
      * 所有用户均可访问
+     * 只能获取已验证的机构
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> getInstitutionById(@PathVariable UUID id) {
         InstitutionDto institution = institutionService.getInstitutionById(id);
         if (institution != null) {
+            // 检查机构是否已验证
+            if (!Boolean.TRUE.equals(institution.getVerified())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponseDto.error("未找到指定的机构"));
+            }
             return ResponseEntity.ok(ApiResponseDto.success(institution, "获取机构成功"));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -40,6 +40,17 @@ public class InstitutionService {
     }
 
     /**
+     * 获取所有已验证的机构列表
+     *
+     * @return 已验证的机构列表
+     */
+    public List<InstitutionDto> getVerifiedInstitutions() {
+        return institutionRepository.findByVerifiedTrue().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 根据ID获取特定机构
      *
      * @param id 机构ID
@@ -58,7 +69,6 @@ public class InstitutionService {
      */
     public InstitutionDto createInstitution(InstitutionCreateRequestDto institutionDto) {
         Institution institution = new Institution();
-        institution.setId(UUID.randomUUID());
         institution.setFullName(institutionDto.getFullName());
         institution.setShortName(institutionDto.getShortName());
         institution.setType(institutionDto.getType());
@@ -114,6 +124,25 @@ public class InstitutionService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 验证通过机构
+     *
+     * @param id 机构ID
+     * @return 验证通过后的机构信息
+     */
+    public InstitutionDto verifyInstitution(UUID id) {
+        Institution existingInstitution = institutionRepository.findById(id).orElse(null);
+        if (existingInstitution == null) {
+            return null;
+        }
+
+        existingInstitution.setVerified(true);
+        existingInstitution.setUpdatedAt(Instant.now());
+
+        Institution savedInstitution = institutionRepository.save(existingInstitution);
+        return convertToDto(savedInstitution);
     }
 
     /**

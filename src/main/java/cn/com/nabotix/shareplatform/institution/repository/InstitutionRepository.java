@@ -4,6 +4,7 @@ import cn.com.nabotix.shareplatform.institution.entity.Institution;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -14,5 +15,6 @@ import java.util.UUID;
  */
 @Repository
 public interface InstitutionRepository extends JpaRepository<Institution, UUID> {
-    // 可以在这里添加自定义查询方法
+    // 查询所有已验证的机构
+    List<Institution> findByVerifiedTrue();
 }

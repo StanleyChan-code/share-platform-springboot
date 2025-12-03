@@ -137,7 +137,6 @@ public class AuthController {
 
             // 验证通过，创建用户
             User user = new User();
-            user.setId(UUID.randomUUID());
             user.setUsername(registrationRequest.getUsername());
             user.setPassword(registrationRequest.getPassword());
             user.setRealName(registrationRequest.getRealName());

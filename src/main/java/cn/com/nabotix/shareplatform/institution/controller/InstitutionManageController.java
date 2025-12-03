@@ -140,11 +140,32 @@ public class InstitutionManageController {
     public ResponseEntity<ApiResponseDto<InstitutionDto>> updateOwnInstitution(@RequestBody InstitutionCreateRequestDto institutionDto) {
         UUID institutionId = getCurrentUserInstitutionId();
 
-        // 检查请求的机构ID是否与当前用户所属机构ID一致
         InstitutionDto updatedInstitution = institutionService.updateInstitution(institutionId, institutionDto);
 
         if (updatedInstitution != null) {
             return ResponseEntity.ok(ApiResponseDto.success(updatedInstitution, "更新机构信息成功"));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseDto.error("未找到指定的机构"));
+        }
+    }
+
+    /**
+     * 验证通过机构
+     * 平台管理员可验证任意机构，机构管理员只能验证自己所属的机构
+     */
+    @PatchMapping("/{id}/verify")
+    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor')")
+    public ResponseEntity<ApiResponseDto<InstitutionDto>> verifyInstitution(@PathVariable UUID id) {
+        // 检查权限
+        if (!hasPermissionToUpdateInstitution(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("无权验证该机构"));
+        }
+
+        InstitutionDto verifiedInstitution = institutionService.verifyInstitution(id);
+        if (verifiedInstitution != null) {
+            return ResponseEntity.ok(ApiResponseDto.success(verifiedInstitution, "机构验证通过成功"));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponseDto.error("未找到指定的机构"));

@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-本文档详细描述了Share Platform平台提供的RESTful API接口，包括用户认证、用户管理、数据集管理和机构管理四大模块。
+本文档详细描述了Share Platform平台提供的RESTful API接口，包括用户认证、用户管理、数据集管理、机构管理、研究学科管理等模块。
 
 ## 2. 公共响应格式
 
@@ -398,7 +398,11 @@
 
 ### 5.5 删除数据集
 
-**接口地址**: `DELETE /api/datasets/{id}`
+**接口地址**: `DELETE /api/manage/datasets/{id}`
+
+**权限要求**: 平台管理员、机构管理员和数据集上传员可删除数据集
+
+**说明**: 平台管理员可删除任意数据集，机构管理员和数据集上传员只能删除自己机构的数据集
 
 **响应示例**:
 ```json
@@ -406,6 +410,41 @@
   "success": true,
   "message": "删除数据集成功",
   "data": null,
+  "timestamp": "2025-12-01T10:00:00Z"
+}
+```
+
+### 5.6 更新数据集审核状态
+
+**接口地址**: `PUT /api/manage/datasets/{id}/approval`
+
+**权限要求**: 平台管理员可修改任意数据集的审核状态，机构管理员只能修改自己机构数据集的审核状态
+
+**请求体**:
+```json
+{
+  "approved": true,
+  "rejectionReason": "数据格式不符合规范"  
+}
+```
+rejectionReason仅在approved为false时需要
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "数据集审核通过",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "titleCn": "中国心血管病风险队列研究数据集",
+    "description": "该数据集包含了中国心血管病风险队列研究的核心变量数据",
+    "type": "cohort",
+    "category": "心血管病学",
+    "providerId": "550e8400-e29b-41d4-a716-446655440000",
+    "startDate": "2025-01-01T00:00:00Z",
+    "endDate": "2025-12-31T00:00:00Z",
+    "approved": true
+  },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
@@ -421,6 +460,8 @@
 **接口地址**: `GET /api/institutions`
 
 **权限要求**: 无需认证，所有用户均可访问
+
+**说明**: 此接口只返回已验证通过的机构
 
 **响应示例**:
 ```json
@@ -452,6 +493,8 @@
 **接口地址**: `GET /api/institutions/{id}`
 
 **权限要求**: 无需认证，所有用户均可访问
+
+**说明**: 此接口只能获取已验证通过的机构
 
 **响应示例**:
 ```json
@@ -710,6 +753,35 @@
 }
 ```
 
+### 6.10 验证通过机构
+
+**接口地址**: `PATCH /api/manage/institutions/{id}/verify`
+
+**权限要求**: 平台管理员可验证任意机构，机构管理员只能验证自己所属的机构
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "机构验证通过成功",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "fullName": "某某医院",
+    "shortName": "某医",
+    "type": "hospital",
+    "contactPerson": "张三",
+    "contactIdType": "national_id",
+    "contactIdNumber": "11010119900307XXXX",
+    "contactPhone": "13800138000",
+    "contactEmail": "contact@example.com",
+    "verified": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-12-01T11:00:00Z"
+  },
+  "timestamp": "2025-12-01T11:00:00Z"
+}
+```
+
 ## 7. 枚举类型
 
 ### 7.1 DatasetType (数据集类型)
@@ -796,7 +868,34 @@
 | institution_supervisor | 机构监管员 |
 | platform_admin | 平台管理员 |
 
-## 8. 错误处理
+## 8. 权限说明
+
+系统中有以下几种用户权限角色：
+
+### 8.1 public_visitor (公共访客)
+- 可以浏览公开的数据集和机构信息
+- 可以注册成为注册研究员
+
+### 8.2 registered_researcher (注册研究员)
+- 拥有公共访客的所有权限
+- 可以申请数据访问权限
+- 可以提交研究成果
+
+### 8.3 data_provider (数据提供者)
+- 拥有注册研究员的所有权限
+- 可以上传和管理自己的数据集
+
+### 8.4 institution_supervisor (机构监管员)
+- 拥有数据提供者的所有权限
+- 可以管理本机构的数据集和用户
+- 可以更新本机构信息
+
+### 8.5 platform_admin (平台管理员)
+- 拥有系统最高权限
+- 可以管理所有数据集、机构和用户
+- 可以创建和管理研究学科
+
+## 9. 错误处理
 
 当发生错误时，API会返回相应的HTTP状态码和错误信息：
 - 400: 请求参数错误
@@ -815,7 +914,7 @@
 }
 ```
 
-## 9. 注意事项
+## 10. 注意事项
 
 1. 所有时间字段均采用ISO 8601格式（UTC时间）
 2. 所有ID字段均为UUID格式

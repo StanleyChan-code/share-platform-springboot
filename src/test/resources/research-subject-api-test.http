@@ -1,0 +1,60 @@
+@researchSubjectId=70ca9c93-0198-4b09-ab6e-660105b06b59
+
+@auth_token_platform_admin = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
+
+### 平台管理员登录（用于获取token）
+# @name login_platform_admin
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "phone": "13800000001",
+  "password": "Admin123456",
+  "loginType": "PASSWORD"
+}
+
+### 公开接口：获取所有激活的研究学科列表
+GET http://localhost:8080/api/research-subjects
+Accept: application/json
+
+### 公开接口：根据ID获取特定激活的研究学科
+GET http://localhost:8080/api/research-subjects/{{researchSubjectId}}
+Accept: application/json
+
+### 平台管理员获取所有研究学科列表（包括未激活的）
+GET http://localhost:8080/api/manage/research-subjects
+Authorization: Bearer {{auth_token_platform_admin}}
+Accept: application/json
+
+### 平台管理员根据ID获取特定研究学科（无论是否激活）
+GET http://localhost:8080/api/manage/research-subjects/{{researchSubjectId}}
+Authorization: Bearer {{auth_token_platform_admin}}
+Accept: application/json
+
+### 平台管理员创建新的研究学科
+POST http://localhost:8080/api/manage/research-subjects
+Authorization: Bearer {{auth_token_platform_admin}}
+Content-Type: application/json
+
+{
+  "name": "临床医学",
+  "nameEn": "Clinical Medicine",
+  "description": "研究疾病的病因、诊断、治疗和预后等的医学学科",
+  "active": false
+}
+
+### 平台管理员更新研究学科
+PUT http://localhost:8080/api/manage/research-subjects/{{researchSubjectId}}
+Authorization: Bearer {{auth_token_platform_admin}}
+Content-Type: application/json
+
+{
+  "name": "基础医学",
+  "nameEn": "Basic Medicine",
+  "description": "研究人体生命活动规律的基础学科",
+  "active": false
+}
+
+### 平台管理员删除研究学科
+DELETE http://localhost:8080/api/manage/research-subjects/{{researchSubjectId}}
+Authorization: Bearer {{auth_token_platform_admin}}

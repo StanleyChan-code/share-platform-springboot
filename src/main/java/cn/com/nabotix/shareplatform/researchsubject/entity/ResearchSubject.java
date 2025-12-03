@@ -1,4 +1,4 @@
-package cn.com.nabotix.shareplatform.entity;
+package cn.com.nabotix.shareplatform.researchsubject.entity;
 
 import lombok.Data;
 
@@ -25,5 +25,5 @@ public class ResearchSubject {
     private Boolean active = true;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private Instant createdAt = Instant.now();
 }

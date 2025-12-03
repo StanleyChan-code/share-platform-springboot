@@ -7,5 +7,6 @@ package cn.com.nabotix.shareplatform.enums;
  */
 public enum UserAuthority {
     institution_supervisor,
-    platform_admin
+    platform_admin,
+    dataset_uploader
 }

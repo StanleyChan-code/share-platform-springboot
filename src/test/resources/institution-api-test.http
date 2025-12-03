@@ -1,16 +1,17 @@
-@institutionId=b0936aa5-8b83-485e-a1a0-c7f4d4af118d
+@institutionId=68e71bea-421c-42b6-b796-1a480190afdd
+
 @auth_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDEzODAwMiIsImlhdCI6MTc2NDY3MTIzNCwiZXhwIjoxNzY2NTM1MjM0fQ.SK-ixBne4YuvdQtSpLTin2niXS8z2MV_L700Pck9G2bs_-EWLixWPd2Vsbk35tAj
 
 @auth_token_platform_admin = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
 
-@auth_token_institution_admin = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDA5OSIsImlhdCI6MTc2NDY3MjE1NSwiZXhwIjoxNzY2NTM2MTU1fQ.E8-XnMlNWgoiRMAdBYvilzuXAJzY--agNSSF2yzifQL7VKV4ct9bx22Fmzq-6rpG
+@auth_token_institution_admin = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDcyOTg5MCwiZXhwIjoxNzY2NTkzODkwfQ.aBIvN0a1KZ1_hzijW7LmupYnvKm7yMEWlobMOtQj_w1nHXm-z0xgGJPXTQWzlBgm
 
 
-### 获取所有机构（公开接口）
+### 获取所有机构（公开接口，只返回已验证的机构）
 GET http://localhost:8080/api/institutions
 Accept: application/json
 
-### 根据ID获取特定机构（公开接口）
+### 根据ID获取特定已验证机构（公开接口）
 GET http://localhost:8080/api/institutions/{{institutionId}}
 Accept: application/json
 
@@ -31,7 +32,7 @@ POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-  "phone": "13800000002",
+  "phone": "13800000100",
   "password": "Institution123456",
   "loginType": "PASSWORD"
 }
@@ -52,10 +53,10 @@ Authorization: Bearer {{auth_token_platform_admin}}
 Content-Type: application/json
 
 {
-  "fullName": "北京大学第一医院",
-  "shortName": "北大一院",
+  "fullName": "东院",
+  "shortName": "院",
   "type": "hospital",
-  "contactPerson": "张医生",
+  "contactPerson": "东医生",
   "contactIdType": "national_id",
   "contactIdNumber": "110101199003077532",
   "contactPhone": "13800000003",
@@ -92,7 +93,7 @@ Content-Type: application/json
   "fullName": "清华大学附属医院（更新）",
   "shortName": "清华附院",
   "type": "hospital",
-  "contactPerson": "王医生i",
+  "contactPerson": "王医生j",
   "contactIdType": "national_id",
   "contactIdNumber": "110101199003077533",
   "contactPhone": "13800000005",
@@ -103,17 +104,26 @@ Content-Type: application/json
 DELETE http://localhost:8080/api/manage/institutions/{{institutionId}}
 Authorization: Bearer {{auth_token_platform_admin}}
 
-### 平台管理员添加用户，并设置其机构为b0936aa5-8b83-485e-a1a0-c7f4d4af118d，并添加机构管理员的权限
+### 平台管理员添加用户，并设置其机构为，并添加机构管理员的权限
 POST http://localhost:8080/api/manage/users
 Authorization: Bearer {{auth_token_platform_admin}}
 Content-Type: application/json
 
 {
-  "phone": "13800000099",
+  "phone": "13800000101",
   "username": "new_institution_admin",
   "realName": "新机构管理员",
   "email": "newadmin@example.com",
   "password": "InstitutionAdmin123",
-  "institutionId": "b0936aa5-8b83-485e-a1a0-c7f4d4af118d"
+  "institutionId": "{{institutionId}}"
 }
 
+### 平台管理员验证通过机构
+PATCH http://localhost:8080/api/manage/institutions/{{institutionId}}/verify
+Authorization: Bearer {{auth_token_platform_admin}}
+Accept: application/json
+
+### 机构管理员验证通过自己所属的机构
+PATCH http://localhost:8080/api/manage/institutions/{{institutionId}}/verify
+Authorization: Bearer {{auth_token_institution_admin}}
+Accept: application/json

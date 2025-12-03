@@ -1,13 +1,16 @@
 package cn.com.nabotix.shareplatform.dataset.controller;
 
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
-import cn.com.nabotix.shareplatform.dataset.dto.DatasetBaseDto;
-
-import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
+import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetService;
+import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
+import cn.com.nabotix.shareplatform.user.entity.User;
+import cn.com.nabotix.shareplatform.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,136 +21,80 @@ import java.util.UUID;
 public class DatasetController {
 
     private final DatasetService datasetService;
+    private final UserService userService;
 
     @Autowired
-    public DatasetController(DatasetService datasetService) {
+    public DatasetController(DatasetService datasetService, UserService userService) {
         this.datasetService = datasetService;
+        this.userService = userService;
     }
 
     /**
-     * 获取所有数据集列表
+     * 获取所有公开数据集列表
+     * 匿名用户：只能看到已批准且已发布的数据集
+     * 机构内用户：能看到已批准且已发布的数据集 + 已批准但未发布的本机构数据集
      */
-    @GetMapping
-    public ResponseEntity<ApiResponseDto<List<Dataset>>> getAllDatasets() {
-        List<Dataset> datasets = datasetService.getAllDatasets();
-        return ResponseEntity.ok(ApiResponseDto.success(datasets, "获取数据集列表成功"));
+    @GetMapping()
+    public ResponseEntity<ApiResponseDto<List<PublicDatasetDto>>> getAllPublicDatasets() {
+        // 检查用户身份
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<PublicDatasetDto> datasets;
+        
+        // 如果用户已认证，进一步判断权限
+        if (authentication != null && authentication.isAuthenticated() 
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userService.getUserByUserId(userDetails.getId());
+            
+            if (user != null && user.getInstitutionId() != null) {
+                // 用户属于某个机构，可以查看完全公开的数据集 + 本机构已批准但未公开的数据集
+                datasets = datasetService.getInstitutionVisibleDatasets(user.getInstitutionId());
+            } else {
+                // 用户不属于任何机构，只能查看完全公开的数据集
+                datasets = datasetService.getAllPublicDatasets();
+            }
+        } else {
+            // 匿名用户只能查看完全公开的数据集
+            datasets = datasetService.getAllPublicDatasets();
+        }
+        
+        return ResponseEntity.ok(ApiResponseDto.success(datasets, "获取公开数据集列表成功"));
     }
 
     /**
-     * 根据ID获取特定数据集
+     * 根据ID获取特定公开数据集
+     * 匿名用户：只能访问已批准且已发布的数据集
+     * 机构内用户：能访问已批准且已发布的数据集 + 已批准但未发布的本机构数据集
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponseDto<Dataset>> getDatasetById(@PathVariable UUID id) {
-        Dataset dataset = datasetService.getDatasetById(id);
+    public ResponseEntity<ApiResponseDto<PublicDatasetDto>> getPublicDatasetById(@PathVariable UUID id) {
+        // 检查用户身份
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        PublicDatasetDto dataset = null;
+        
+        // 如果用户已认证，进一步判断权限
+        if (authentication != null && authentication.isAuthenticated() 
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userService.getUserByUserId(userDetails.getId());
+            
+            if (user != null && user.getInstitutionId() != null) {
+                // 用户属于某个机构，可以访问完全公开的数据集 + 本机构已批准但未公开的数据集
+                dataset = datasetService.getDatasetByIdAndUserInstitution(id, user.getInstitutionId());
+            } else {
+                // 用户不属于任何机构，只能访问完全公开的数据集
+                dataset = datasetService.getPublicDatasetById(id);
+            }
+        } else {
+            // 匿名用户只能访问完全公开的数据集
+            dataset = datasetService.getPublicDatasetById(id);
+        }
+        
         if (dataset != null) {
-            return ResponseEntity.ok(ApiResponseDto.success(dataset, "获取数据集成功"));
+            return ResponseEntity.ok(ApiResponseDto.success(dataset, "获取公开数据集成功"));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseDto.error("未找到指定的数据集"));
-        }
-    }
-
-    /**
-     * 创建新的数据集
-     */
-    @PostMapping
-    public ResponseEntity<ApiResponseDto<Dataset>> createDataset(@RequestBody DatasetBaseDto datasetDto) {
-        Dataset dataset = new Dataset();
-        // 将 DTO 转换为实体
-        dataset.setTitleCn(datasetDto.getTitleCn());
-        dataset.setDescription(datasetDto.getDescription());
-        dataset.setType(datasetDto.getType());
-        dataset.setCategory(datasetDto.getCategory());
-        dataset.setProviderId(datasetDto.getProviderId());
-        dataset.setSupervisorId(datasetDto.getSupervisorId());
-        dataset.setStartDate(datasetDto.getStartDate());
-        dataset.setEndDate(datasetDto.getEndDate());
-        dataset.setRecordCount(datasetDto.getRecordCount());
-        dataset.setVariableCount(datasetDto.getVariableCount());
-        dataset.setKeywords(datasetDto.getKeywords());
-        dataset.setSubjectAreaId(datasetDto.getSubjectAreaId());
-        dataset.setFileUrl(datasetDto.getFileUrl());
-        dataset.setDataDictUrl(datasetDto.getDataDictUrl());
-        dataset.setApproved(datasetDto.getApproved());
-        dataset.setPublished(datasetDto.getPublished());
-        dataset.setShareAllData(datasetDto.getShareAllData());
-        dataset.setDatasetLeader(datasetDto.getDatasetLeader());
-        dataset.setDataCollectionUnit(datasetDto.getDataCollectionUnit());
-        dataset.setContactPerson(datasetDto.getContactPerson());
-        dataset.setContactInfo(datasetDto.getContactInfo());
-        dataset.setDemographicFields(datasetDto.getDemographicFields());
-        dataset.setOutcomeFields(datasetDto.getOutcomeFields());
-        dataset.setTermsAgreementUrl(datasetDto.getTermsAgreementUrl());
-        dataset.setSamplingMethod(datasetDto.getSamplingMethod());
-        dataset.setVersionNumber(datasetDto.getVersionNumber());
-        dataset.setFirstPublishedDate(datasetDto.getFirstPublishedDate());
-        dataset.setCurrentVersionDate(datasetDto.getCurrentVersionDate());
-        dataset.setParentDatasetId(datasetDto.getParentDatasetId());
-        dataset.setPrincipalInvestigator(datasetDto.getPrincipalInvestigator());
-        
-        Dataset createdDataset = datasetService.createDataset(dataset);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponseDto.success(createdDataset, "创建数据集成功"));
-    }
-
-    /**
-     * 更新现有数据集
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseDto<Dataset>> updateDataset(@PathVariable UUID id, @RequestBody DatasetBaseDto datasetDto) {
-        Dataset dataset = new Dataset();
-        // 将 DTO 转换为实体
-        dataset.setTitleCn(datasetDto.getTitleCn());
-        dataset.setDescription(datasetDto.getDescription());
-        dataset.setType(datasetDto.getType());
-        dataset.setCategory(datasetDto.getCategory());
-        dataset.setProviderId(datasetDto.getProviderId());
-        dataset.setSupervisorId(datasetDto.getSupervisorId());
-        dataset.setStartDate(datasetDto.getStartDate());
-        dataset.setEndDate(datasetDto.getEndDate());
-        dataset.setRecordCount(datasetDto.getRecordCount());
-        dataset.setVariableCount(datasetDto.getVariableCount());
-        dataset.setKeywords(datasetDto.getKeywords());
-        dataset.setSubjectAreaId(datasetDto.getSubjectAreaId());
-        dataset.setFileUrl(datasetDto.getFileUrl());
-        dataset.setDataDictUrl(datasetDto.getDataDictUrl());
-        dataset.setApproved(datasetDto.getApproved());
-        dataset.setPublished(datasetDto.getPublished());
-        dataset.setShareAllData(datasetDto.getShareAllData());
-        dataset.setDatasetLeader(datasetDto.getDatasetLeader());
-        dataset.setDataCollectionUnit(datasetDto.getDataCollectionUnit());
-        dataset.setContactPerson(datasetDto.getContactPerson());
-        dataset.setContactInfo(datasetDto.getContactInfo());
-        dataset.setDemographicFields(datasetDto.getDemographicFields());
-        dataset.setOutcomeFields(datasetDto.getOutcomeFields());
-        dataset.setTermsAgreementUrl(datasetDto.getTermsAgreementUrl());
-        dataset.setSamplingMethod(datasetDto.getSamplingMethod());
-        dataset.setVersionNumber(datasetDto.getVersionNumber());
-        dataset.setFirstPublishedDate(datasetDto.getFirstPublishedDate());
-        dataset.setCurrentVersionDate(datasetDto.getCurrentVersionDate());
-        dataset.setParentDatasetId(datasetDto.getParentDatasetId());
-        dataset.setPrincipalInvestigator(datasetDto.getPrincipalInvestigator());
-        
-        Dataset updatedDataset = datasetService.updateDataset(id, dataset);
-        if (updatedDataset != null) {
-            return ResponseEntity.ok(ApiResponseDto.success(updatedDataset, "更新数据集成功"));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseDto.error("未找到指定的数据集"));
-        }
-    }
-
-    /**
-     * 删除数据集
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponseDto<Void>> deleteDataset(@PathVariable UUID id) {
-        boolean deleted = datasetService.deleteDataset(id);
-        if (deleted) {
-            return ResponseEntity.ok(ApiResponseDto.success(null, "删除数据集成功"));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseDto.error("未找到指定的数据集"));
+                    .body(ApiResponseDto.error("未找到指定的公开数据集"));
         }
     }
 }

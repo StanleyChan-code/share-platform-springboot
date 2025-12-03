@@ -2,6 +2,9 @@ package cn.com.nabotix.shareplatform.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,7 +19,8 @@ public class AuditLogEntry {
     @Column(name = "instance_id")
     private UUID instanceId;
 
-    @Column(columnDefinition = "json")
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String payload;
 
     @Column(name = "created_at")
