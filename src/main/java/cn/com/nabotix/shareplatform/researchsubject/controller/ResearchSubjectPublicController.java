@@ -37,18 +37,13 @@ public class ResearchSubjectPublicController {
     }
 
     /**
-     * 根据ID获取特定激活的研究学科
+     * 根据ID获取特定研究学科（无论是否激活）
      * 所有用户均可访问
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponseDto<ResearchSubjectDto>> getActiveResearchSubjectById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponseDto<ResearchSubjectDto>> getResearchSubjectById(@PathVariable UUID id) {
         ResearchSubjectDto subject = researchSubjectService.getResearchSubjectById(id);
         if (subject != null) {
-            // 检查学科是否激活
-            if (!Boolean.TRUE.equals(subject.getActive())) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponseDto.error("未找到指定的研究学科"));
-            }
             return ResponseEntity.ok(ApiResponseDto.success(subject, "获取研究学科成功"));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

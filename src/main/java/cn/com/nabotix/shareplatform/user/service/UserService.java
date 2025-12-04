@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,6 +60,15 @@ public class UserService {
     }
 
     /**
+     * 获取系统中所有可用的权限
+     *
+     * @return 所有权限列表
+     */
+    public List<UserAuthority> getAllAuthorities() {
+        return Arrays.asList(UserAuthority.values());
+    }
+
+    /**
      * 为用户添加角色
      *
      * @param userId 用户ID
@@ -89,6 +99,16 @@ public class UserService {
                 userAuthorityRepository.delete(entity);
             }
         }
+    }
+
+    /**
+     * 移除用户的所有角色
+     *
+     * @param userId 用户ID
+     */
+    public void removeAllUserAuthorities(UUID userId) {
+        List<UserAuthorityEntity> authorityEntityList = userAuthorityRepository.findByUserId(userId);
+        userAuthorityRepository.deleteAll(authorityEntityList);
     }
 
     /**

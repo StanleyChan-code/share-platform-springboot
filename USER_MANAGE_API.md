@@ -2,7 +2,7 @@
 
 所有用户管理接口都在 `/api/users` 和 `/api/manage/users` 路径下。
 
-## 1. 获取用户信息
+## 1. 获取当前用户信息
 
 **接口地址**: `GET /api/users/profile`
 
@@ -46,7 +46,25 @@
 }
 ```
 
-## 3. 平台管理员创建用户
+## 3. 获取当前用户权限列表
+
+**接口地址**: `GET /api/users/authorities`
+
+**权限要求**: 任意已认证用户
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "获取当前用户权限列表成功",
+  "data": [
+    "registered_researcher"
+  ],
+  "timestamp": "2025-12-01T10:00:00Z"
+}
+```
+
+## 4. 平台管理员创建用户
 
 **接口地址**: `POST /api/manage/users`
 
@@ -77,6 +95,68 @@
     "email": "newuser@example.com",
     "institutionId": "550e8400-e29b-41d4-a716-446655440001"
   },
+  "timestamp": "2025-12-01T10:00:00Z"
+}
+```
+
+## 5. 获取系统权限列表
+
+**接口地址**: `GET /api/manage/authorities`
+
+**权限要求**: 平台管理员或机构管理员
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "获取权限列表成功",
+  "data": [
+    "platform_admin",
+    "institution_supervisor",
+    "dataset_uploader"
+  ],
+  "timestamp": "2025-12-01T10:00:00Z"
+}
+```
+
+## 6. 获取指定用户权限列表
+
+**接口地址**: `GET /api/manage/authorities/{userId}`
+
+**权限要求**: 平台管理员或机构管理员
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "获取用户权限列表成功",
+  "data": [
+    "institution_supervisor"
+  ],
+  "timestamp": "2025-12-01T10:00:00Z"
+}
+```
+
+## 7. 更新用户权限
+
+**接口地址**: `PUT /api/manage/authorities`
+
+**权限要求**: 平台管理员或机构管理员
+
+**请求体**:
+```json
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "authorities": ["institution_supervisor", "dataset_uploader"]
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "权限更新成功",
+  "data": "权限更新成功",
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```

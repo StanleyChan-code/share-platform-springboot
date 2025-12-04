@@ -12,50 +12,175 @@
 
 **权限要求**: 匿名用户可访问公开数据集，认证用户可额外访问本机构未公开但已审核的数据集
 
+**请求参数**:
+| 参数名 | 类型 | 必填 | 描述 |
+| --- | --- | --- | --- |
+| page | Integer | 否 | 页码，默认为0 |
+| size | Integer | 否 | 每页大小，默认为10 |
+| sortBy | String | 否 | 排序字段，默认为updatedAt |
+| sortDir | String | 否 | 排序方向(asc/desc)，默认为desc |
+
 **响应示例**:
 ```json
 {
   "success": true,
-  "message": "获取公开数据集列表成功",
-  "data": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "titleCn": "数据集标题",
-      "description": "数据集描述",
-      "type": "cohort",
-      "provider": {
-        "id": "550e8400-e29b-41d4-a716-446655440001",
-        "username": "provider_user",
-        "realName": "提供者姓名",
-        "title": "职称"
+  "message": "获取公开顶层数据集列表成功",
+  "data": {
+    "content": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "titleCn": "数据集标题",
+        "description": "数据集描述",
+        "type": "cohort",
+        "provider": {
+          "id": "550e8400-e29b-41d4-a716-446655440001",
+          "username": "provider_user",
+          "realName": "提供者姓名",
+          "title": "职称"
+        },
+        "supervisor": {
+          "id": "550e8400-e29b-41d4-a716-446655440002",
+          "username": "supervisor_user",
+          "realName": "监管者姓名",
+          "title": "职称"
+        },
+        "startDate": "2025-01-01T00:00:00Z",
+        "endDate": "2025-12-31T00:00:00Z",
+        "recordCount": 1000,
+        "variableCount": 50,
+        "keywords": ["关键词1", "关键词2"],
+        "subjectArea": {
+          "id": "550e8400-e29b-41d4-a716-446655440003",
+          "name": "学科名称",
+          "nameEn": "Subject Name",
+          "description": "学科描述"
+        },
+        "approved": true,
+        "published": true,
+        "searchCount": 10
+      }
+    ],
+    "pageable": {
+      "sort": {
+        "sorted": true,
+        "unsorted": false,
+        "empty": false
       },
-      "supervisor": {
-        "id": "550e8400-e29b-41d4-a716-446655440002",
-        "username": "supervisor_user",
-        "realName": "监管者姓名",
-        "title": "职称"
-      },
-      "startDate": "2025-01-01T00:00:00Z",
-      "endDate": "2025-12-31T00:00:00Z",
-      "recordCount": 1000,
-      "variableCount": 50,
-      "keywords": ["关键词1", "关键词2"],
-      "subjectArea": {
-        "id": "550e8400-e29b-41d4-a716-446655440003",
-        "name": "学科名称",
-        "nameEn": "Subject Name",
-        "description": "学科描述"
-      },
-      "approved": true,
-      "published": true,
-      "searchCount": 10
-    }
-  ],
+      "offset": 0,
+      "pageNumber": 0,
+      "pageSize": 10,
+      "paged": true,
+      "unpaged": false
+    },
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true,
+    "size": 10,
+    "number": 0,
+    "sort": {
+      "sorted": true,
+      "unsorted": false,
+      "empty": false
+    },
+    "numberOfElements": 1,
+    "first": true,
+    "empty": false
+  },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 1.2 根据ID获取特定公开数据集
+### 1.2 获取时间轴式公开数据集列表
+
+**接口地址**: `GET /api/datasets/timeline`
+
+**权限要求**: 匿名用户可访问公开数据集，认证用户可额外访问本机构未公开但已审核的数据集
+
+**请求参数**:
+| 参数名 | 类型 | 必填 | 描述 |
+| --- | --- | --- | --- |
+| page | Integer | 否 | 页码，默认为0 |
+| size | Integer | 否 | 每页大小，默认为10 |
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "获取时间轴式公开数据集列表成功",
+  "data": {
+    "content": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "titleCn": "数据集标题",
+        "description": "数据集描述",
+        "type": "cohort",
+        "provider": {
+          "id": "550e8400-e29b-41d4-a716-446655440001",
+          "username": "provider_user",
+          "realName": "提供者姓名",
+          "title": "职称"
+        },
+        "supervisor": {
+          "id": "550e8400-e29b-41d4-a716-446655440002",
+          "username": "supervisor_user",
+          "realName": "监管者姓名",
+          "title": "职称"
+        },
+        "startDate": "2025-01-01T00:00:00Z",
+        "endDate": "2025-12-31T00:00:00Z",
+        "recordCount": 1000,
+        "variableCount": 50,
+        "keywords": ["关键词1", "关键词2"],
+        "subjectArea": {
+          "id": "550e8400-e29b-41d4-a716-446655440003",
+          "name": "学科名称",
+          "nameEn": "Subject Name",
+          "description": "学科描述"
+        },
+        "approved": true,
+        "published": true,
+        "searchCount": 10,
+        "subDatasets": [
+          {
+            "id": "550e8400-e29b-41d4-a716-446655440004",
+            "titleCn": "子数据集标题",
+            "startDate": "2025-01-01T00:00:00Z",
+            "endDate": "2025-12-31T00:00:00Z"
+          }
+        ]
+      }
+    ],
+    "pageable": {
+      "sort": {
+        "sorted": true,
+        "unsorted": false,
+        "empty": false
+      },
+      "offset": 0,
+      "pageNumber": 0,
+      "pageSize": 10,
+      "paged": true,
+      "unpaged": false
+    },
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true,
+    "size": 10,
+    "number": 0,
+    "sort": {
+      "sorted": true,
+      "unsorted": false,
+      "empty": false
+    },
+    "numberOfElements": 1,
+    "first": true,
+    "empty": false
+  },
+  "timestamp": "2025-12-01T10:00:00Z"
+}
+```
+
+### 1.3 根据ID获取特定公开数据集
 
 **接口地址**: `GET /api/datasets/{id}`
 

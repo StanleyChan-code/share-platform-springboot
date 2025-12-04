@@ -45,6 +45,18 @@ public class ResearchSubjectService {
     }
 
     /**
+     * 获取所有未激活的研究学科
+     * 仅平台管理员使用
+     *
+     * @return 未激活的研究学科列表
+     */
+    public List<ResearchSubjectDto> getInactiveResearchSubjects() {
+        return researchSubjectRepository.findByActiveFalse().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 根据ID获取研究学科
      *
      * @param id 学科ID

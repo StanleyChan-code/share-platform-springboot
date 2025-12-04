@@ -50,6 +50,9 @@ public class PublicDatasetDto {
 
     private Instant createdAt;
     private Instant updatedAt;
+    
+    // 添加子数据集字段（随访数据集）
+    private PublicDatasetDto[] followUpDatasets;
 
     /**
      * 数据集监督者DTO

@@ -8,13 +8,20 @@ import cn.com.nabotix.shareplatform.researchsubject.repository.ResearchSubjectRe
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+/**
+ * 数据集服务类
+ * 提供数据集的增删改查、审批、发布等相关业务逻辑
+ */
 @Service
 public class DatasetService {
 
@@ -32,61 +39,124 @@ public class DatasetService {
     }
 
     /**
-     * 获取所有公开数据集
-     */
-    public List<PublicDatasetDto> getAllPublicDatasets() {
-        return datasetRepository.findPublicVisibleDatasets().stream()
-                .map(this::convertToPublicDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 根据ID获取公开数据集
+     * 根据ID获取公开数据集（适用于匿名用户）
      */
     public PublicDatasetDto getPublicDatasetById(UUID id) {
-        Dataset dataset = datasetRepository.findPublicVisibleById(id).orElse(null);
-        return dataset != null ? convertToPublicDto(dataset) : null;
+        return datasetRepository.findById(id)
+                .filter(d -> d.getApproved() != null && d.getPublished() != null &&
+                        d.getApproved() && d.getPublished())
+                .map(this::convertToPublicDto)
+                .orElse(null);
     }
 
     /**
-     * 根据ID和用户机构ID获取数据集（用于机构内用户访问检查）
+     * 根据ID和用户机构ID获取数据集（用于机构内用户访问）
      */
     public PublicDatasetDto getDatasetByIdAndUserInstitution(UUID id, UUID userInstitutionId) {
-        // 首先尝试查找完全公开的数据集
-        Dataset dataset = datasetRepository.findPublicVisibleById(id).orElse(null);
-        
-        // 如果找不到完全公开的数据集，再尝试查找本机构已批准但未公开的数据集
-        if (dataset == null) {
-            dataset = datasetRepository.findApprovedByIdAndInstitutionId(id, userInstitutionId).orElse(null);
-        }
-        
-        return dataset != null ? convertToPublicDto(dataset) : null;
+        return datasetRepository.findById(id)
+                .filter(d -> d.getApproved() != null && d.getApproved() &&
+                        d.getPublished() != null && (d.getPublished() || d.getInstitutionId().equals(userInstitutionId)))
+                .map(this::convertToPublicDto)
+                .orElse(null);
     }
 
     /**
-     * 获取机构内可见的数据集列表
-     * 返回完全公开的数据集 + 本机构已批准但未公开的数据集
+     * 获取所有公开的顶层数据集（parentDatasetId为空）
      */
-    public List<PublicDatasetDto> getInstitutionVisibleDatasets(UUID institutionId) {
-        // 获取完全公开的数据集
-        List<PublicDatasetDto> publicDatasets = getAllPublicDatasets();
-        
-        // 获取本机构已批准但未公开的数据集
-        List<Dataset> institutionApprovedDatasets = datasetRepository.findInstitutionVisibleByInstitutionId(institutionId);
-        
-        // 合并两个列表并去重
-        List<PublicDatasetDto> result = publicDatasets.stream().collect(Collectors.toList());
-        
-        // 添加本机构已批准但未公开的数据集（排除已在公开列表中的）
-        for (Dataset dataset : institutionApprovedDatasets) {
-            // 检查是否已经在结果中（通过ID判断）
-            boolean exists = result.stream().anyMatch(dto -> dto.getId().equals(dataset.getId()));
-            if (!exists) {
-                result.add(convertToPublicDto(dataset));
-            }
+    public Page<PublicDatasetDto> getAllPublicTopLevelDatasets(Pageable pageable) {
+        Page<Dataset> datasetPage = datasetRepository.findPublicVisibleTopLevelDatasets(pageable);
+        List<PublicDatasetDto> dtoList = datasetPage.getContent().stream()
+                .map(this::convertToPublicDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, datasetPage.getTotalElements());
+    }
+
+    /**
+     * 获取机构内可见的顶层数据集列表（parentDatasetId为空）
+     * 返回完全公开的顶层数据集 + 本机构已批准但未公开的顶层数据集
+     */
+    public Page<PublicDatasetDto> getInstitutionVisibleTopLevelDatasets(UUID institutionId, Pageable pageable) {
+        // 使用新的查询方法，直接在数据库层面合并查询并分页
+        Page<Dataset> datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
+        List<PublicDatasetDto> dtoList = datasetPage.getContent().stream()
+                .map(this::convertToPublicDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, datasetPage.getTotalElements());
+    }
+
+    /**
+     * 获取时间轴形式的公开数据集（仅包含没有父数据集的数据集）
+     * 并附带其子数据集（随访数据集）
+     * 匿名用户：只能看到已批准且已发布的数据集
+     * 机构内用户：能看到已批准且已发布的数据集 + 已批准但未公开的本机构数据集
+     */
+    public Page<PublicDatasetDto> getTimelinePublicDatasets(Pageable pageable) {
+        // 获取公开可见的顶层数据集（分页）
+        Page<Dataset> datasetPage = datasetRepository.findPublicVisibleTopLevelDatasets(pageable);
+
+        // 转换为时间轴DTO（包含子数据集）
+        List<PublicDatasetDto> timelineDtoList = datasetPage.getContent().stream()
+                .map(this::convertToTimelinePublicDto)
+                .sorted(Comparator.comparing(PublicDatasetDto::getStartDate))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(timelineDtoList, pageable, datasetPage.getTotalElements());
+    }
+
+    /**
+     * 获取时间轴形式的机构可见数据集（仅包含没有父数据集的数据集）
+     * 并附带其子数据集（随访数据集）
+     * 机构内用户：能看到已批准且已发布的数据集 + 已批准但未公开的本机构数据集
+     */
+    public Page<PublicDatasetDto> getTimelineInstitutionVisibleDatasets(UUID institutionId, Pageable pageable) {
+        Page<Dataset> datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
+        List<PublicDatasetDto> timelineDtoList = datasetPage.getContent().stream()
+                .map(dataset -> convertToTimelineInstitutionDto(dataset, institutionId))
+                .collect(Collectors.toList());
+        return new PageImpl<>(timelineDtoList, pageable, datasetPage.getTotalElements());
+    }
+
+    /**
+     * 将Dataset实体转换为PublicDatasetDto（时间轴版本，包含子数据集）
+     */
+    public PublicDatasetDto convertToTimelinePublicDto(Dataset dataset) {
+        PublicDatasetDto dto = convertToPublicDto(dataset);
+
+        // 获取该数据集的子数据集（随访数据集）
+        if (dto.getId() != null) {
+            PublicDatasetDto[] children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
+                    .filter(child -> child.getApproved() != null && child.getApproved() &&
+                            child.getPublished() != null && child.getPublished())
+                    .sorted(Comparator.comparing(Dataset::getStartDate))
+                    .map(this::convertToPublicDto)
+                    .toArray(PublicDatasetDto[]::new);
+
+            dto.setFollowUpDatasets(children);
         }
-        
-        return result;
+
+        return dto;
+    }
+
+    /**
+     * 将Dataset实体转换为PublicDatasetDto（针对机构用户的版本，包含子数据集）
+     */
+    public PublicDatasetDto convertToTimelineInstitutionDto(Dataset dataset, UUID userInstitutionId) {
+        PublicDatasetDto dto = convertToPublicDto(dataset);
+
+        // 获取该数据集的子数据集（随访数据集）
+        if (dto.getId() != null) {
+
+            PublicDatasetDto[] children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
+                    .filter(child -> child.getApproved() != null && child.getApproved() &&
+                            child.getPublished() != null && (child.getPublished() || child.getInstitutionId().equals(userInstitutionId)))
+                    .sorted(Comparator.comparing(Dataset::getStartDate))
+                    .map(this::convertToPublicDto)
+                    .toArray(PublicDatasetDto[]::new);
+
+            dto.setFollowUpDatasets(children);
+        }
+
+        return dto;
     }
 
     /**
@@ -183,10 +253,10 @@ public class DatasetService {
             dataset.setParentDatasetId(datasetDetails.getParentDatasetId());
             dataset.setPrincipalInvestigator(datasetDetails.getPrincipalInvestigator());
             dataset.setInstitutionId(datasetDetails.getInstitutionId());
-            
+
             // 更新修改时间
             dataset.setUpdatedAt(Instant.now());
-            
+
             return datasetRepository.save(dataset);
         }
         return null;
@@ -202,12 +272,12 @@ public class DatasetService {
         }
         return false;
     }
-    
+
     /**
      * 更新数据集审核状态
-     * 
-     * @param id 数据集ID
-     * @param approved 审核状态
+     *
+     * @param id         数据集ID
+     * @param approved   审核状态
      * @param reviewerId 审核人ID
      * @return 更新后的数据集
      */

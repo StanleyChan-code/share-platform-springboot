@@ -1,18 +1,18 @@
 package cn.com.nabotix.shareplatform.user.controller;
 
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
+import cn.com.nabotix.shareplatform.enums.UserAuthority;
 import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -78,5 +78,21 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ApiResponseDto.error("获取用户信息失败", e));
         }
+    }
+
+    /**
+     * 获取当前用户（自己）的权限列表
+     * 任意已认证用户都可以访问此接口
+     *
+     * @return 当前用户的权限列表
+     */
+    @GetMapping("/authorities")
+    public ResponseEntity<ApiResponseDto<List<UserAuthority>>> getCurrentUserAuthorities() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        List<UserAuthority> authorities = userService.getUserAuthorities(userDetails.getId());
+
+        return ResponseEntity.ok(ApiResponseDto.success(authorities, "获取当前用户权限列表成功"));
     }
 }

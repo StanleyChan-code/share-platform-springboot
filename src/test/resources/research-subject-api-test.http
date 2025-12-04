@@ -17,11 +17,11 @@ Content-Type: application/json
 GET http://localhost:8080/api/research-subjects
 Accept: application/json
 
-### 公开接口：根据ID获取特定激活的研究学科
+### 公开接口：根据ID获取特定研究学科
 GET http://localhost:8080/api/research-subjects/{{researchSubjectId}}
 Accept: application/json
 
-### 平台管理员获取所有研究学科列表（包括未激活的）
+### 平台管理员获取所有研究学科列表（包括激活和未激活的）
 GET http://localhost:8080/api/manage/research-subjects
 Authorization: Bearer {{auth_token_platform_admin}}
 Accept: application/json
@@ -40,6 +40,18 @@ Content-Type: application/json
   "name": "临床医学",
   "nameEn": "Clinical Medicine",
   "description": "研究疾病的病因、诊断、治疗和预后等的医学学科",
+  "active": true
+}
+
+### 平台管理员创建新的未激活研究学科
+POST http://localhost:8080/api/manage/research-subjects
+Authorization: Bearer {{auth_token_platform_admin}}
+Content-Type: application/json
+
+{
+  "name": "基础医学",
+  "nameEn": "Basic Medicine",
+  "description": "研究人体生命活动规律的基础学科",
   "active": false
 }
 
@@ -49,9 +61,21 @@ Authorization: Bearer {{auth_token_platform_admin}}
 Content-Type: application/json
 
 {
-  "name": "基础医学",
-  "nameEn": "Basic Medicine",
-  "description": "研究人体生命活动规律的基础学科",
+  "name": "更新后的临床医学",
+  "nameEn": "Updated Clinical Medicine",
+  "description": "更新后的研究疾病的病因、诊断、治疗和预后等的医学学科描述",
+  "active": true
+}
+
+### 平台管理员更新研究学科为未激活状态
+PUT http://localhost:8080/api/manage/research-subjects/{{researchSubjectId}}
+Authorization: Bearer {{auth_token_platform_admin}}
+Content-Type: application/json
+
+{
+  "name": "更新后的临床医学",
+  "nameEn": "Updated Clinical Medicine",
+  "description": "更新后的研究疾病的病因、诊断、治疗和预后等的医学学科描述",
   "active": false
 }
 

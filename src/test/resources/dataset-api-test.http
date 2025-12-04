@@ -1,20 +1,29 @@
 @datasetId=e621aab7-7660-42c9-807d-1435861d6e42
+@parentDatasetId=65c69327-85b3-466e-ac30-2cb506b76cdd
+
+@subjectAreaId=70ca9c93-0198-4b09-ab6e-660105b06b59
 @researchSubjectId=70ca9c93-0198-4b09-ab6e-660105b06b59
 
 @platformAdminToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
 
-# 68e71bea-421c-42b6-b796-1a480190afdd机构
-@institutionSupervisorToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDcyOTg5MCwiZXhwIjoxNzY2NTkzODkwfQ.aBIvN0a1KZ1_hzijW7LmupYnvKm7yMEWlobMOtQj_w1nHXm-z0xgGJPXTQWzlBgm
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，管理员
+@supervisorId = c4d9798f-4701-4ea1-b49d-218b84235432
+@institutionSupervisorToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
 
-# 68e71bea-421c-42b6-b796-1a480190afdd机构
-@datasetUploaderToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMSIsImlhdCI6MTc2NDc1MjA0NiwiZXhwIjoxNzY2NjE2MDQ2fQ.BjLTaxuhByyiBVEgD_-4HEakRi8nd05-73vOL7rPM5M3fBLQ7UOsuMGHD3IHwpX0
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，数据集上传员7c34890d-e50b-44e1-991a-fbad1842fd25
+@providerId = 7c34890d-e50b-44e1-991a-fbad1842fd25
+@datasetUploaderToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMSIsImlhdCI6MTc2NDgxOTI0MiwiZXhwIjoxNzY2NjgzMjQyfQ.Lm1gEVO0YJJwPMvyb2ejd5A-fD2cpLMIyJJfsAYpAg8oB6VCK0Dlb10o5_R3nC8u
 
-# 9664a7c9-e337-48d6-a55e-547c285f4ea7机构管理员
+# 9664a7c9-e337-48d6-a55e-547c285f4ea7机构，管理员99ec84d8-9ccb-4a53-be97-4f385cb2d044
 @personToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
 
 
 ### 获取所有公开数据集
 GET http://localhost:8080/api/datasets
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 获取所有公开数据集
+GET http://localhost:8080/api/datasets/timeline
 Authorization: Bearer {{personToken}}
 
 ### 根据ID获取特定公开数据集
@@ -120,8 +129,8 @@ Content-Type: application/json
 Authorization: Bearer {{datasetUploaderToken}}
 
 {
-  "titleCn": "示例数据集2",
-  "description": "这是另一个示例数据集",
+  "titleCn": "示例数据集3",
+  "description": "这是另2个示例数据集",
   "type": "cohort",
   "category": "医学研究",
   "providerId": "7c34890d-e50b-44e1-991a-fbad1842fd25",
@@ -262,7 +271,7 @@ Authorization: Bearer {{datasetUploaderToken}}
   "versionNumber": "2.0",
   "firstPublishedDate": "2023-07-01T00:00:00Z",
   "currentVersionDate": "2023-12-01T00:00:00Z",
-  "parentDatasetId": null,
+  "parentDatasetId": "{{parentDatasetId}}",
   "principalInvestigator": "周八"
 }
 
@@ -300,7 +309,7 @@ Authorization: Bearer {{platformAdminToken}}
 ### 机构管理员审核通过数据集
 PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/approval
 Content-Type: application/json
-Authorization: Bearer {{personToken}}
+Authorization: Bearer {{institutionSupervisorToken}}
 
 {
   "approved": true

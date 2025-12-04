@@ -14,4 +14,10 @@ public interface ResearchSubjectRepository extends JpaRepository<ResearchSubject
      * @return 激活的研究学科列表
      */
     List<ResearchSubject> findByActiveTrue();
+    
+    /**
+     * 查找所有未激活的研究学科
+     * @return 未激活的研究学科列表
+     */
+    List<ResearchSubject> findByActiveFalse();
 }

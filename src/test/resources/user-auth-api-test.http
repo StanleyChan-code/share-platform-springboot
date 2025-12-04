@@ -1,8 +1,8 @@
-@phone = 13800000201
+@phone = 13800000101
 @phone1 = 13812345678
 @admin_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
 
-@institution_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDcyOTg5MCwiZXhwIjoxNzY2NTkzODkwfQ.aBIvN0a1KZ1_hzijW7LmupYnvKm7yMEWlobMOtQj_w1nHXm-z0xgGJPXTQWzlBgm
+@institution_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
 
 @auth_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDEzODAwMiIsImlhdCI6MTc2NDY3MTIzNCwiZXhwIjoxNzY2NTM1MjM0fQ.SK-ixBne4YuvdQtSpLTin2niXS8z2MV_L700Pck9G2bs_-EWLixWPd2Vsbk35tAj
 
@@ -31,7 +31,7 @@ Content-Type: application/json
 
 {
   "phone": {{phone}},
-  "verificationCode": "704425",
+  "verificationCode": "193689",
   "loginType": "VERIFICATION_CODE"
 }
 
