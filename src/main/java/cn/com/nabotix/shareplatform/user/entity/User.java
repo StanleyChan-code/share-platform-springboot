@@ -1,8 +1,5 @@
 package cn.com.nabotix.shareplatform.user.entity;
 
-import cn.com.nabotix.shareplatform.enums.EducationLevel;
-import cn.com.nabotix.shareplatform.enums.IdType;
-
 
 import jakarta.persistence.*;
 import lombok.Data;

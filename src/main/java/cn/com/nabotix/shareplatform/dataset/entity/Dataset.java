@@ -1,6 +1,5 @@
 package cn.com.nabotix.shareplatform.dataset.entity;
 
-import cn.com.nabotix.shareplatform.enums.DatasetType;
 import lombok.Data;
 
 import jakarta.persistence.*;
@@ -123,22 +122,22 @@ public class Dataset {
     private String samplingMethod;
 
     /**
-     * 数据文件URL地址
+     * 数据文件记录ID
      */
-    @Column(name = "file_url")
-    private String fileUrl;
+    @Column(name = "file_record_id")
+    private UUID fileRecordId;
 
     /**
-     * 数据字典URL地址
+     * 数据字典文件记录ID
      */
-    @Column(name = "data_dict_url")
-    private String dataDictUrl;
+    @Column(name = "data_dict_record_id")
+    private UUID dataDictRecordId;
 
     /**
-     * 条款协议URL地址
+     * 条款协议文件记录ID
      */
-    @Column(name = "terms_agreement_url")
-    private String termsAgreementUrl;
+    @Column(name = "terms_agreement_record_id")
+    private UUID termsAgreementRecordId;
 
     /**
      * 审核状态(true:已审核, false:未审核)
@@ -229,5 +228,14 @@ public class Dataset {
      */
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * 申请机构ID列表
+     * null表示允许所有人申请
+     * []表示不允许任何人申请
+     * [UUID1, UUID2, ...]表示只允许这些机构的人申请
+     */
+    @Column(name = "application_institution_ids", columnDefinition = "uuid[]")
+    private UUID[] applicationInstitutionIds;
 
 }

@@ -1,7 +1,7 @@
 package cn.com.nabotix.shareplatform.user.controller;
 
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
-import cn.com.nabotix.shareplatform.enums.UserAuthority;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
 import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 
 import cn.com.nabotix.shareplatform.user.entity.User;
@@ -37,7 +37,7 @@ public class UserController {
      * @param userId 用户ID
      * @return 用户信息
      */
-    @PreAuthorize("hasAuthority('platform_admin')")
+    @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponseDto<User>> getUserById(@PathVariable UUID userId) {
         try {

@@ -3,10 +3,13 @@ package cn.com.nabotix.shareplatform.dataset.service;
 import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.repository.DatasetRepository;
+import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
 import cn.com.nabotix.shareplatform.researchsubject.entity.ResearchSubject;
 import cn.com.nabotix.shareplatform.researchsubject.repository.ResearchSubjectRepository;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
+import jakarta.persistence.Transient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -16,26 +19,29 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * 数据集服务类
  * 提供数据集的增删改查、审批、发布等相关业务逻辑
  */
+@Slf4j
 @Service
 public class DatasetService {
 
     private final DatasetRepository datasetRepository;
     private final ResearchSubjectRepository researchSubjectRepository;
     private final UserRepository userRepository;
+    private final FileManagementService fileManagementService;
 
     @Autowired
     public DatasetService(DatasetRepository datasetRepository,
                           ResearchSubjectRepository researchSubjectRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          FileManagementService fileManagementService) {
         this.datasetRepository = datasetRepository;
         this.researchSubjectRepository = researchSubjectRepository;
         this.userRepository = userRepository;
+        this.fileManagementService = fileManagementService;
     }
 
     /**
@@ -208,11 +214,22 @@ public class DatasetService {
     /**
      * 创建新数据集
      */
+    @Transient
     public Dataset createDataset(Dataset dataset) {
         // 设置创建和更新时间
         dataset.setCreatedAt(Instant.now());
         dataset.setUpdatedAt(Instant.now());
-        return datasetRepository.save(dataset);
+
+        Dataset saveDateset = datasetRepository.save(dataset);
+
+        if (dataset.getFileRecordId() == null) {
+            return null;
+        }
+
+        // 移动相关文件到指定目录
+        moveDatasetFiles(saveDateset);
+        
+        return saveDateset;
     }
 
     /**
@@ -221,6 +238,11 @@ public class DatasetService {
     public Dataset updateDataset(UUID id, Dataset datasetDetails) {
         Dataset dataset = datasetRepository.findById(id).orElse(null);
         if (dataset != null) {
+            // 保存旧的文件记录ID，以便后续比较
+            UUID oldFileRecordId = dataset.getFileRecordId();
+            UUID oldDataDictRecordId = dataset.getDataDictRecordId();
+            UUID oldTermsAgreementRecordId = dataset.getTermsAgreementRecordId();
+
             // 更新字段
             dataset.setTitleCn(datasetDetails.getTitleCn());
             dataset.setDescription(datasetDetails.getDescription());
@@ -234,8 +256,8 @@ public class DatasetService {
             dataset.setVariableCount(datasetDetails.getVariableCount());
             dataset.setKeywords(datasetDetails.getKeywords());
             dataset.setSubjectAreaId(datasetDetails.getSubjectAreaId());
-            dataset.setFileUrl(datasetDetails.getFileUrl());
-            dataset.setDataDictUrl(datasetDetails.getDataDictUrl());
+            dataset.setFileRecordId(datasetDetails.getFileRecordId());
+            dataset.setDataDictRecordId(datasetDetails.getDataDictRecordId());
             dataset.setApproved(datasetDetails.getApproved());
             dataset.setPublished(datasetDetails.getPublished());
             dataset.setShareAllData(datasetDetails.getShareAllData());
@@ -245,7 +267,7 @@ public class DatasetService {
             dataset.setContactInfo(datasetDetails.getContactInfo());
             dataset.setDemographicFields(datasetDetails.getDemographicFields());
             dataset.setOutcomeFields(datasetDetails.getOutcomeFields());
-            dataset.setTermsAgreementUrl(datasetDetails.getTermsAgreementUrl());
+            dataset.setTermsAgreementRecordId(datasetDetails.getTermsAgreementRecordId());
             dataset.setSamplingMethod(datasetDetails.getSamplingMethod());
             dataset.setVersionNumber(datasetDetails.getVersionNumber());
             dataset.setFirstPublishedDate(datasetDetails.getFirstPublishedDate());
@@ -253,13 +275,81 @@ public class DatasetService {
             dataset.setParentDatasetId(datasetDetails.getParentDatasetId());
             dataset.setPrincipalInvestigator(datasetDetails.getPrincipalInvestigator());
             dataset.setInstitutionId(datasetDetails.getInstitutionId());
+            dataset.setApplicationInstitutionIds(datasetDetails.getApplicationInstitutionIds());
 
             // 更新修改时间
             dataset.setUpdatedAt(Instant.now());
+            
+            // 移动相关文件到指定目录
+            moveDatasetFiles(dataset);
 
-            return datasetRepository.save(dataset);
+            // 保存更新后的数据集
+            Dataset updatedDataset = datasetRepository.save(dataset);
+
+            // 检查是否有文件记录ID变更，如果有则标记删除旧文件
+            handleFileRecordChanges(oldFileRecordId, dataset.getFileRecordId());
+            handleFileRecordChanges(oldDataDictRecordId, dataset.getDataDictRecordId());
+            handleFileRecordChanges(oldTermsAgreementRecordId, dataset.getTermsAgreementRecordId());
+
+            return updatedDataset;
         }
         return null;
+    }
+    
+    /**
+     * 将数据集相关文件移动到指定目录
+     * @param dataset 数据集实体
+     */
+    private void moveDatasetFiles(Dataset dataset) {
+        // 构建数据集文件存储路径
+        String basePath = "dataset/" + dataset.getId() + "/";
+        
+        // 移动数据文件
+        if (dataset.getFileRecordId() != null) {
+            try {
+                fileManagementService.moveFileToDirectory(dataset.getFileRecordId(), basePath);
+            } catch (Exception e) {
+                // 记录日志，但不中断操作
+                log.error("Failed to move data file: {}", e.getMessage());
+            }
+        }
+        
+        // 移动数据字典文件
+        if (dataset.getDataDictRecordId() != null) {
+            try {
+                fileManagementService.moveFileToDirectory(dataset.getDataDictRecordId(), basePath);
+            } catch (Exception e) {
+                // 记录日志，但不中断操作
+                log.error("Failed to move data dictionary file: {}", e.getMessage());
+            }
+        }
+        
+        // 移动条款协议文件
+        if (dataset.getTermsAgreementRecordId() != null) {
+            try {
+                fileManagementService.moveFileToDirectory(dataset.getTermsAgreementRecordId(), basePath);
+            } catch (Exception e) {
+                // 记录日志，但不中断操作
+                log.error("Failed to move terms agreement file: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 处理文件记录变更，如果文件记录ID发生变化，则标记删除旧文件
+     * @param oldFileRecordId 旧文件记录ID
+     * @param newFileRecordId 新文件记录ID
+     */
+    private void handleFileRecordChanges(UUID oldFileRecordId, UUID newFileRecordId) {
+        // 如果旧文件记录ID不为空且与新文件记录ID不同，则标记删除旧文件
+        if (oldFileRecordId != null && !oldFileRecordId.equals(newFileRecordId)) {
+            try {
+                fileManagementService.markFileAsDeleted(oldFileRecordId);
+            } catch (Exception e) {
+                // 记录日志，但不中断操作
+                log.error("Failed to mark old file as deleted: {}", e.getMessage());
+            }
+        }
     }
 
     /**

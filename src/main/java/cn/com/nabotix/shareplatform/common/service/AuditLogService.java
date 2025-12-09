@@ -1,7 +1,7 @@
 package cn.com.nabotix.shareplatform.common.service;
 
-import cn.com.nabotix.shareplatform.entity.AuditLogEntry;
-import cn.com.nabotix.shareplatform.repository.AuditLogEntryRepository;
+import cn.com.nabotix.shareplatform.common.entry.AuditLog;
+import cn.com.nabotix.shareplatform.common.repository.AuditLogRepository;
 import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +19,11 @@ import java.util.UUID;
 @Service
 public class AuditLogService {
 
-    private final AuditLogEntryRepository auditLogEntryRepository;
+    private final AuditLogRepository auditLogRepository;
 
     @Autowired
-    public AuditLogService(AuditLogEntryRepository auditLogEntryRepository) {
-        this.auditLogEntryRepository = auditLogEntryRepository;
+    public AuditLogService(AuditLogRepository auditLogRepository) {
+        this.auditLogRepository = auditLogRepository;
     }
 
     /**
@@ -36,7 +36,7 @@ public class AuditLogService {
      */
     public void logAction(String action, UUID resourceId, Map<String, Object> details, String ipAddress) {
         try {
-            AuditLogEntry auditLog = new AuditLogEntry();
+            AuditLog auditLog = new AuditLog();
             auditLog.setId(UUID.randomUUID());
 
             // 构造payload
@@ -52,7 +52,7 @@ public class AuditLogService {
             auditLog.setCreatedAt(Instant.now());
             auditLog.setIpAddress(ipAddress);
 
-            auditLogEntryRepository.save(auditLog);
+            auditLogRepository.save(auditLog);
         } catch (Exception e) {
             // 日志记录失败不应该影响主要业务流程
             log.error("记录审计日志失败", e);
@@ -71,7 +71,7 @@ public class AuditLogService {
     public void logApprovalAction(String action, UUID resourceId, String resourceTitle, 
                                   Map<String, Object> additionalParams, String ipAddress) {
         try {
-            AuditLogEntry auditLog = new AuditLogEntry();
+            AuditLog auditLog = new AuditLog();
             auditLog.setCreatedAt(Instant.now());
             auditLog.setIpAddress(ipAddress);
 
@@ -85,7 +85,7 @@ public class AuditLogService {
             auditLog.setPayload(JSON.toJSONString(payloadMap));
             auditLog.setInstanceId(resourceId);
 
-            auditLogEntryRepository.save(auditLog);
+            auditLogRepository.save(auditLog);
         } catch (Exception e) {
             // 日志记录失败不应该影响主要业务流程
             log.error("记录审批审计日志失败", e);

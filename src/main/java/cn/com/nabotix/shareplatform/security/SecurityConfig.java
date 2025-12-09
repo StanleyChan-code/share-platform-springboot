@@ -48,17 +48,12 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-verification-code").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("platform_admin")
-                        .requestMatchers("/api/manage/datasets/**").hasAnyAuthority("platform_admin", "institution_supervisor", "dataset_uploader")
-                        .requestMatchers("/api/manage/**").hasAnyAuthority("platform_admin", "institution_supervisor")
-                        .requestMatchers("/api/institutions/**").permitAll()
-                        .requestMatchers("/api/datasets/**").permitAll()
-                        .requestMatchers("/api/research-subjects/**").permitAll()
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/**/*.css", "/**/*.js").permitAll()
-                        .anyRequest().authenticated()
-                )
+//                .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-verification-code").permitAll()
+//                        .requestMatchers("/api/**").permitAll()
+//                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/**/*.css", "/**/*.js").permitAll()
+//                        .anyRequest().authenticated()
+//                )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable);
         

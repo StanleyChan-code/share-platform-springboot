@@ -1,0 +1,310 @@
+package cn.com.nabotix.shareplatform.dataset.service;
+
+import cn.com.nabotix.shareplatform.dataset.dto.ApplicationDto;
+import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
+import cn.com.nabotix.shareplatform.dataset.repository.DatasetRepository;
+import cn.com.nabotix.shareplatform.dataset.entity.Application;
+import cn.com.nabotix.shareplatform.dataset.entity.ApplicationStatus;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
+import cn.com.nabotix.shareplatform.repository.ApplicationRepository;
+import cn.com.nabotix.shareplatform.security.AuthorityUtil;
+import cn.com.nabotix.shareplatform.user.entity.User;
+import cn.com.nabotix.shareplatform.user.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/**
+ * 数据集申请服务类
+ */
+@Slf4j
+@Service
+public class ApplicationService {
+
+    private final ApplicationRepository applicationRepository;
+    private final DatasetRepository datasetRepository;
+    private final UserRepository userRepository;
+    private final DatasetService datasetService;
+
+    @Autowired
+    public ApplicationService(ApplicationRepository applicationRepository,
+                              DatasetRepository datasetRepository,
+                              UserRepository userRepository,
+                              DatasetService datasetService) {
+        this.applicationRepository = applicationRepository;
+        this.datasetRepository = datasetRepository;
+        this.userRepository = userRepository;
+        this.datasetService = datasetService;
+    }
+
+    /**
+     * 创建数据集申请
+     *
+     * @param applicationDto 申请信息
+     * @param applicantId    申请人ID
+     * @return 创建的申请
+     */
+    public Application createApplication(ApplicationDto applicationDto, UUID applicantId) {
+        // 检查数据集是否存在且可申请
+        Dataset dataset = datasetRepository.findById(applicationDto.getDatasetId()).orElse(null);
+        if (dataset == null) {
+            throw new IllegalArgumentException("数据集不存在");
+        }
+
+        // 检查用户是否有权限申请该数据集
+        if (!canUserApplyForDataset(applicantId, dataset)) {
+            throw new IllegalStateException("您无权限申请该数据集");
+        }
+
+        // 创建申请记录
+        Application application = new Application();
+        application.setDatasetId(applicationDto.getDatasetId());
+        application.setApplicantId(applicantId);
+        application.setApplicantRole(applicationDto.getApplicantRole());
+        application.setApplicantType(applicationDto.getApplicantType());
+        application.setProjectTitle(applicationDto.getProjectTitle());
+        application.setProjectDescription(applicationDto.getProjectDescription());
+        application.setFundingSource(applicationDto.getFundingSource());
+        application.setPurpose(applicationDto.getPurpose());
+        application.setProjectLeader(applicationDto.getProjectLeader());
+        application.setApprovalDocumentId(applicationDto.getApprovalDocumentId());
+        application.setStatus(ApplicationStatus.SUBMITTED);
+        application.setSubmittedAt(Instant.now());
+
+        return applicationRepository.save(application);
+    }
+
+    /**
+     * 检查用户是否有权限申请指定数据集
+     *
+     * @param userId  用户ID
+     * @param dataset 数据集
+     * @return 是否有权限申请
+     */
+    public boolean canUserApplyForDataset(UUID userId, Dataset dataset) {
+        // 检查数据集是否已审核通过
+        if (dataset.getApproved() == null || !dataset.getApproved()) {
+            return false;
+        }
+
+        // 检查数据集是否已发布
+        if (dataset.getPublished() == null || !dataset.getPublished()) {
+            return false;
+        }
+
+        // 获取用户信息
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return false;
+        }
+
+        // 检查applicationInstitutionIds字段
+        // null表示允许所有人申请
+        if (dataset.getApplicationInstitutionIds() == null) {
+            return true;
+        }
+
+        // []表示不允许任何人申请
+        if (dataset.getApplicationInstitutionIds().length == 0) {
+            return false;
+        }
+
+        // [UUID1, UUID2, ...]表示只允许这些机构的人申请
+        if (user.getInstitutionId() != null) {
+            for (UUID institutionId : dataset.getApplicationInstitutionIds()) {
+                if (institutionId.equals(user.getInstitutionId())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 数据集提供者审核申请
+     *
+     * @param applicationId 申请ID
+     * @param providerId    提供者ID
+     * @param notes         审核意见
+     * @param approved      是否通过
+     * @return 更新后的申请
+     */
+    public Application reviewByProvider(UUID applicationId, UUID providerId, String notes, Boolean approved) {
+        Application application = applicationRepository.findById(applicationId).orElse(null);
+        if (application == null) {
+            throw new IllegalArgumentException("申请记录不存在");
+        }
+
+        // 检查是否处于待数据提供者审核状态
+        if (application.getStatus() != ApplicationStatus.PENDING_PROVIDER_REVIEW) {
+            throw new IllegalStateException("申请状态不正确，当前申请不处于待数据提供者审核状态");
+        }
+
+        // 检查是否有权限审核
+        Dataset dataset = datasetRepository.findById(application.getDatasetId()).orElse(null);
+        if (dataset == null || !dataset.getProviderId().equals(providerId)) {
+            throw new IllegalStateException("无权限审核该申请");
+        }
+
+        // 更新审核信息
+        application.setProviderNotes(notes);
+        application.setProviderReviewedAt(Instant.now());
+
+        // 更新状态
+        if (approved) {
+            application.setStatus(ApplicationStatus.PENDING_INSTITUTION_REVIEW);
+        } else {
+            application.setStatus(ApplicationStatus.DENIED);
+            application.setApprovedAt(Instant.now());
+        }
+
+        return applicationRepository.save(application);
+    }
+
+    /**
+     * 申请审核员审核申请
+     *
+     * @param applicationId 申请ID
+     * @param reviewerId    审核员ID
+     * @param notes         审核意见
+     * @param approved      是否通过
+     * @return 更新后的申请
+     */
+    public Application reviewByApprover(UUID applicationId, UUID reviewerId, String notes, Boolean approved) {
+        Application application = applicationRepository.findById(applicationId).orElse(null);
+        if (application == null) {
+            throw new IllegalArgumentException("申请记录不存在");
+        }
+
+        // 检查申请状态是否为待机构审核
+        if (application.getStatus() != ApplicationStatus.PENDING_INSTITUTION_REVIEW) {
+            throw new IllegalStateException("申请状态不正确，当前申请不处于待机构审核状态");
+        }
+
+        // 检查是否有权限审核
+        Dataset dataset = datasetRepository.findById(application.getDatasetId()).orElse(null);
+        User reviewer = userRepository.findById(reviewerId).orElse(null);
+        if (dataset == null || reviewer == null) {
+            throw new IllegalStateException("数据异常");
+        }
+
+        // 检查审核员权限（平台管理员、机构管理员或数据集申请审核员）
+        AuthorityUtil.checkBuilder()
+                .withAllowedAuthorities(UserAuthority.PLATFORM_ADMIN, UserAuthority.INSTITUTION_SUPERVISOR, UserAuthority.DATASET_APPROVER)
+                .whenCheckFalse(() -> {
+                    throw new IllegalStateException("无权限审核该申请");
+                })
+                .whenCheckTrue(() -> {
+                    // 更新审核信息
+                    application.setAdminNotes(notes);
+                    application.setSupervisorId(reviewerId);
+                    application.setInstitutionReviewedAt(Instant.now());
+
+                    // 更新状态
+                    if (approved) {
+                        application.setStatus(ApplicationStatus.APPROVED);
+                        application.setApprovedAt(Instant.now());
+                    } else {
+                        application.setStatus(ApplicationStatus.DENIED);
+                    }
+                })
+                .execute();
+
+        return applicationRepository.save(application);
+    }
+
+    /**
+     * 根据ID获取申请详情
+     *
+     * @param id 申请ID
+     * @return 申请详情
+     */
+    public ApplicationDto getApplicationById(UUID id) {
+        Application application = applicationRepository.findById(id).orElse(null);
+        if (application == null) {
+            return null;
+        }
+
+        return enrichApplicationDto(application);
+    }
+
+    /**
+     * 获取申请者自己的申请记录列表（分页）
+     *
+     * @param applicantId 申请人ID
+     * @param pageable    分页参数
+     * @return 申请记录列表
+     */
+    public Page<ApplicationDto> getApplicationsByApplicantId(UUID applicantId, Pageable pageable) {
+        Page<Application> applicationPage = applicationRepository.findAllByApplicantId(applicantId, pageable);
+        List<ApplicationDto> dtoList = applicationPage.getContent().stream()
+                .map(this::enrichApplicationDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, applicationPage.getTotalElements());
+    }
+
+    /**
+     * 获取数据集提供者的申请记录列表（分页）
+     *
+     * @param providerId 数据集提供者ID
+     * @param pageable   分页参数
+     * @return 申请记录列表
+     */
+    public Page<ApplicationDto> getApplicationsByProviderId(UUID providerId, Pageable pageable) {
+        Page<Application> applicationPage = applicationRepository.findAllByProviderId(providerId, pageable);
+        List<ApplicationDto> dtoList = applicationPage.getContent().stream()
+                .map(this::enrichApplicationDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, applicationPage.getTotalElements());
+    }
+
+    /**
+     * 获取指定状态的申请记录列表（供审核员查看）
+     *
+     * @param institutionId 机构ID
+     * @param status        申请状态
+     * @param pageable      分页参数
+     * @return 申请记录列表
+     */
+    public Page<ApplicationDto> getApplicationsByInstitutionIdAndStatus(
+            UUID institutionId, ApplicationStatus status, Pageable pageable) {
+        Page<Application> applicationPage = applicationRepository
+                .findAllByInstitutionIdAndStatus(institutionId, status, pageable);
+        List<ApplicationDto> dtoList = applicationPage.getContent().stream()
+                .map(this::enrichApplicationDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, applicationPage.getTotalElements());
+    }
+
+    /**
+     * 补充申请DTO的额外信息
+     *
+     * @param application 申请实体
+     * @return 补充后的申请DTO
+     */
+    private ApplicationDto enrichApplicationDto(Application application) {
+        ApplicationDto dto = ApplicationDto.fromEntity(application);
+
+        // 补充数据集标题
+        datasetRepository.findById(application.getDatasetId()).ifPresent(dataset -> dto.setDatasetTitle(dataset.getTitleCn()));
+
+        // 补充申请人姓名
+        userRepository.findById(application.getApplicantId()).ifPresent(applicant -> dto.setApplicantName(applicant.getRealName()));
+
+        // 补充监督人姓名
+        if (application.getSupervisorId() != null) {
+            userRepository.findById(application.getSupervisorId()).ifPresent(supervisor -> dto.setSupervisorName(supervisor.getRealName()));
+        }
+
+        return dto;
+    }
+}

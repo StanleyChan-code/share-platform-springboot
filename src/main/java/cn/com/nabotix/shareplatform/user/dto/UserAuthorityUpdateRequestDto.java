@@ -1,6 +1,6 @@
 package cn.com.nabotix.shareplatform.user.dto;
 
-import cn.com.nabotix.shareplatform.enums.UserAuthority;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
 import lombok.Data;
 
 import java.util.Set;

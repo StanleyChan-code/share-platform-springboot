@@ -1,0 +1,90 @@
+@applicationId=87963886-662a-4348-969b-46131d2f7462
+
+# 用户令牌（普通数据集用户）
+@datasetUserToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
+
+# 数据集上传员令牌
+@datasetUploaderToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMSIsImlhdCI6MTc2NDgxOTI0MiwiZXhwIjoxNzY2NjgzMjQyfQ.Lm1gEVO0YJJwPMvyb2ejd5A-fD2cpLMIyJJfsAYpAg8oB6VCK0Dlb10o5_R3nC8u
+
+# 平台管理员令牌
+@platformAdminToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
+
+# 机构管理员令牌
+@institutionSupervisorToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
+
+# 数据集申请审核员令牌
+@datasetApproverToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDMwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+
+### 用户申请数据集
+@datasetId = e621aab7-7660-42c9-807d-1435861d6e42
+POST http://localhost:8080/api/applications
+Content-Type: application/json
+Authorization: Bearer {{datasetUserToken}}
+
+{
+  "datasetId": "{{datasetId}}",
+  "applicantRole": "TEAM_RESEARCHER",
+  "applicantType": "科研团队",
+  "projectTitle": "心血管疾病研究项目",
+  "projectDescription": "本项目旨在研究心血管疾病的发病机制及相关风险因素。",
+  "fundingSource": "国家自然科学基金",
+  "purpose": "用于分析心血管疾病与生活习惯的关系",
+  "projectLeader": "张三",
+  "approvalDocumentId": "e621aab7-7660-42c9-807d-1435861d6e42"
+}
+
+### 数据集提供者审核申请（通过）
+PUT http://localhost:8080/api/applications/{{applicationId}}/provider-review
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "notes": "项目内容详实，符合数据使用规范。",
+  "approved": true
+}
+
+### 数据集提供者审核申请（拒绝）
+PUT http://localhost:8080/api/applications/{{applicationId}}/provider-review
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "notes": "项目描述不够详细，需要补充更多信息。",
+  "approved": false
+}
+
+### 申请审核员审核申请（通过）
+PUT http://localhost:8080/api/manage/applications/{{applicationId}}/approver-review
+Content-Type: application/json
+Authorization: Bearer {{platformAdminToken}}
+
+{
+  "notes": "项目符合伦理审查要求，同意申请。",
+  "approved": true
+}
+
+### 申请审核员审核申请（拒绝）
+PUT http://localhost:8080/api/manage/applications/{{applicationId}}/approver-review
+Content-Type: application/json
+Authorization: Bearer {{institutionSupervisorToken}}
+
+{
+  "notes": "项目资金来源不明，暂不同意申请。",
+  "approved": false
+}
+
+### 申请者查询自己的申请记录
+GET http://localhost:8080/api/applications/my-applications?page=0&size=10&sortBy=submittedAt&sortDir=desc
+Authorization: Bearer {{datasetUserToken}}
+
+### 数据集提供者查看申请记录列表
+GET http://localhost:8080/api/applications/provider-applications?page=0&size=10&sortBy=submittedAt&sortDir=desc
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 申请审核员查看待审核申请记录列表
+GET http://localhost:8080/api/manage/applications/pending-applications?page=0&size=10&sortBy=submittedAt&sortDir=desc
+Authorization: Bearer {{platformAdminToken}}
+
+### 申请审核员查看已处理申请记录列表
+GET http://localhost:8080/api/manage/applications/processed-applications?page=0&size=10&sortBy=submittedAt&sortDir=desc
+Authorization: Bearer {{institutionSupervisorToken}}

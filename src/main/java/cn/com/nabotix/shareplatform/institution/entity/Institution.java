@@ -1,7 +1,6 @@
 package cn.com.nabotix.shareplatform.institution.entity;
 
-import cn.com.nabotix.shareplatform.enums.IdType;
-import cn.com.nabotix.shareplatform.enums.InstitutionType;
+import cn.com.nabotix.shareplatform.user.entity.IdType;
 import lombok.Data;
 
 import jakarta.persistence.*;

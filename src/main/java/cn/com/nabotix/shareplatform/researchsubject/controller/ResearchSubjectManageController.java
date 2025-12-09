@@ -21,7 +21,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/manage/research-subjects")
-@PreAuthorize("hasAuthority('platform_admin')")
+@PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
 public class ResearchSubjectManageController {
 
     private final ResearchSubjectService researchSubjectService;

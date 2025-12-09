@@ -1,4 +1,4 @@
-package cn.com.nabotix.shareplatform.enums;
+package cn.com.nabotix.shareplatform.security;
 
 /**
  * 用户权限枚举类
@@ -6,7 +6,8 @@ package cn.com.nabotix.shareplatform.enums;
  * @author 陈雍文
  */
 public enum UserAuthority {
-    institution_supervisor,
-    platform_admin,
-    dataset_uploader
+    INSTITUTION_SUPERVISOR,
+    PLATFORM_ADMIN,
+    DATASET_UPLOADER,
+    DATASET_APPROVER
 }

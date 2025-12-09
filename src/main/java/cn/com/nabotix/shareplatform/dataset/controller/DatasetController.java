@@ -39,6 +39,44 @@ public class DatasetController {
         this.datasetService = datasetService;
         this.userService = userService;
     }
+    
+    /**
+     * 获取特定数据集的时间轴视图（包含该数据集及其子数据集）
+     * 匿名用户：只能访问已批准且已发布的数据集
+     * 机构内用户：能访问已批准且已发布的数据集 + 已批准但未发布的本机构数据集
+     */
+    @GetMapping("/{id}/timeline")
+    public ResponseEntity<ApiResponseDto<PublicDatasetDto>> getDatasetTimelineById(@PathVariable UUID id) {
+        // 检查用户身份
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        PublicDatasetDto dataset;
+        
+        // 如果用户已认证，进一步判断权限
+        if (authentication != null && authentication.isAuthenticated() 
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userService.getUserByUserId(userDetails.getId());
+            
+            if (user != null && user.getInstitutionId() != null) {
+                // 用户属于某个机构，可以访问完全公开的数据集 + 本机构已批准但未公开的数据集
+                dataset = datasetService.convertToTimelineInstitutionDto(
+                    datasetService.getDatasetById(id), user.getInstitutionId());
+            } else {
+                // 用户不属于任何机构，只能访问完全公开的数据集
+                dataset = datasetService.convertToTimelinePublicDto(datasetService.getDatasetById(id));
+            }
+        } else {
+            // 匿名用户只能访问完全公开的数据集
+            dataset = datasetService.convertToTimelinePublicDto(datasetService.getDatasetById(id));
+        }
+        
+        if (dataset != null) {
+            return ResponseEntity.ok(ApiResponseDto.success(dataset, "获取数据集时间轴视图成功"));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseDto.error("未找到指定的数据集"));
+        }
+    }
 
     /**
      * 获取所有公开的顶层数据集列表（parentDatasetId为空）

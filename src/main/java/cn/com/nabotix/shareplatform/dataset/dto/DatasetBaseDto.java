@@ -1,6 +1,6 @@
 package cn.com.nabotix.shareplatform.dataset.dto;
 
-import cn.com.nabotix.shareplatform.enums.DatasetType;
+import cn.com.nabotix.shareplatform.dataset.entity.DatasetType;
 import lombok.Data;
 
 import java.time.Instant;
@@ -26,8 +26,8 @@ public class DatasetBaseDto {
     private Integer variableCount;
     private String[] keywords;
     private UUID subjectAreaId;
-    private String fileUrl;
-    private String dataDictUrl;
+    private UUID fileRecordId;
+    private UUID dataDictRecordId;
     private Boolean approved = false;
     private Boolean published = false;
     private Boolean shareAllData = false;
@@ -37,11 +37,12 @@ public class DatasetBaseDto {
     private String contactInfo;
     private String demographicFields;
     private String outcomeFields;
-    private String termsAgreementUrl;
+    private UUID termsAgreementRecordId;
     private String samplingMethod;
     private String versionNumber;
     private Instant firstPublishedDate;
     private Instant currentVersionDate;
     private UUID parentDatasetId;
     private String principalInvestigator;
+    private UUID[] applicationInstitutionIds;
 }

@@ -19,6 +19,7 @@
 - [数据集管理接口](DATASET_API.md) - 数据集的查询、创建和管理接口
 - [机构管理接口](INSTITUTION_API.md) - 机构信息的查询和管理接口
 - [研究学科接口](RESEARCH_SUBJECT_API.md) - 研究学科的查询和管理接口
+- [数据集申请接口](APPLICATION_API.md) - 数据集申请和审批相关接口
 - [枚举类型和权限说明](ENUMS_AND_PERMISSIONS.md) - 系统使用的枚举类型和权限角色说明
 
 ## 技术栈

@@ -1,6 +1,6 @@
 package cn.com.nabotix.shareplatform.user.entity;
 
-import cn.com.nabotix.shareplatform.enums.UserAuthority;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
 
 import jakarta.persistence.*;
 import lombok.Data;

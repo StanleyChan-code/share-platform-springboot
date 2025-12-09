@@ -60,31 +60,12 @@
         "searchCount": 10
       }
     ],
-    "pageable": {
-      "sort": {
-        "sorted": true,
-        "unsorted": false,
-        "empty": false
-      },
-      "offset": 0,
-      "pageNumber": 0,
-      "pageSize": 10,
-      "paged": true,
-      "unpaged": false
-    },
-    "totalElements": 1,
-    "totalPages": 1,
-    "last": true,
-    "size": 10,
-    "number": 0,
-    "sort": {
-      "sorted": true,
-      "unsorted": false,
-      "empty": false
-    },
-    "numberOfElements": 1,
-    "first": true,
-    "empty": false
+    "page": {
+      "size": 10,
+      "number": 0,
+      "totalElements": 1,
+      "totalPages": 1
+    }
   },
   "timestamp": "2025-12-01T10:00:00Z"
 }
@@ -150,31 +131,12 @@
         ]
       }
     ],
-    "pageable": {
-      "sort": {
-        "sorted": true,
-        "unsorted": false,
-        "empty": false
-      },
-      "offset": 0,
-      "pageNumber": 0,
-      "pageSize": 10,
-      "paged": true,
-      "unpaged": false
-    },
-    "totalElements": 1,
-    "totalPages": 1,
-    "last": true,
-    "size": 10,
-    "number": 0,
-    "sort": {
-      "sorted": true,
-      "unsorted": false,
-      "empty": false
-    },
-    "numberOfElements": 1,
-    "first": true,
-    "empty": false
+    "page": {
+      "size": 10,
+      "number": 0,
+      "totalElements": 1,
+      "totalPages": 1
+    }
   },
   "timestamp": "2025-12-01T10:00:00Z"
 }

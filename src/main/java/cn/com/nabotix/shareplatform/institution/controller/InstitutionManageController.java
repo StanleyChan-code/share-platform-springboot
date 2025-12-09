@@ -41,7 +41,7 @@ public class InstitutionManageController {
      * 仅平台管理员可访问
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('platform_admin')")
+    @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponseDto<List<InstitutionDto>>> getAllInstitutions() {
         List<InstitutionDto> institutions = institutionService.getAllInstitutions();
         return ResponseEntity.ok(ApiResponseDto.success(institutions, "获取机构列表成功"));
@@ -52,7 +52,7 @@ public class InstitutionManageController {
      * 仅平台管理员可访问
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('platform_admin')")
+    @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> getInstitutionById(@PathVariable UUID id) {
         InstitutionDto institution = institutionService.getInstitutionById(id);
         if (institution != null) {
@@ -68,7 +68,7 @@ public class InstitutionManageController {
      * 仅平台管理员可访问
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('platform_admin')")
+    @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> createInstitution(@RequestBody InstitutionCreateRequestDto institutionDto) {
         InstitutionDto createdInstitution = institutionService.createInstitution(institutionDto);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -80,7 +80,7 @@ public class InstitutionManageController {
      * 平台管理员可更新任意机构，机构管理员只能更新自己所属的机构
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR')")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> updateInstitution(@PathVariable UUID id, @RequestBody InstitutionCreateRequestDto institutionDto) {
         // 检查权限
         if (!hasPermissionToUpdateInstitution(id)) {
@@ -102,7 +102,7 @@ public class InstitutionManageController {
      * 仅平台管理员可访问
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('platform_admin')")
+    @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
     public ResponseEntity<ApiResponseDto<Void>> deleteInstitution(@PathVariable UUID id) {
         boolean deleted = institutionService.deleteInstitution(id);
         if (deleted) {
@@ -118,7 +118,7 @@ public class InstitutionManageController {
      * 仅机构管理员可访问
      */
     @GetMapping("/own")
-    @PreAuthorize("hasAuthority('institution_supervisor')")
+    @PreAuthorize("hasAuthority('INSTITUTION_SUPERVISOR')")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> getOwnInstitution() {
         UUID institutionId = getCurrentUserInstitutionId();
         InstitutionDto institution = institutionService.getInstitutionById(institutionId);
@@ -136,7 +136,7 @@ public class InstitutionManageController {
      * 仅机构管理员可访问
      */
     @PutMapping("/own")
-    @PreAuthorize("hasAuthority('institution_supervisor')")
+    @PreAuthorize("hasAuthority('INSTITUTION_SUPERVISOR')")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> updateOwnInstitution(@RequestBody InstitutionCreateRequestDto institutionDto) {
         UUID institutionId = getCurrentUserInstitutionId();
 
@@ -155,7 +155,7 @@ public class InstitutionManageController {
      * 平台管理员可验证任意机构，机构管理员只能验证自己所属的机构
      */
     @PatchMapping("/{id}/verify")
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR')")
     public ResponseEntity<ApiResponseDto<InstitutionDto>> verifyInstitution(@PathVariable UUID id) {
         // 检查权限
         if (!hasPermissionToUpdateInstitution(id)) {
@@ -184,13 +184,13 @@ public class InstitutionManageController {
 
         // 平台管理员可以更新任何机构
         if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "platform_admin".equals(authority.getAuthority()))) {
+                .anyMatch(authority -> "PLATFORM_ADMIN".equals(authority.getAuthority()))) {
             return true;
         }
 
         // 机构管理员只能更新自己所属的机构
         if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "institution_supervisor".equals(authority.getAuthority()))) {
+                .anyMatch(authority -> "INSTITUTION_SUPERVISOR".equals(authority.getAuthority()))) {
             var user = userService.getUserByUserId(userDetails.getId());
             return user != null && user.getInstitutionId() != null && user.getInstitutionId().equals(institutionId);
         }

@@ -2,7 +2,7 @@ package cn.com.nabotix.shareplatform.user.service;
 
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.entity.UserAuthorityEntity;
-import cn.com.nabotix.shareplatform.enums.UserAuthority;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
 import cn.com.nabotix.shareplatform.user.repository.UserAuthorityRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;

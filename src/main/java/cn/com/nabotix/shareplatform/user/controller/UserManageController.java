@@ -5,14 +5,12 @@ import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 import cn.com.nabotix.shareplatform.user.dto.UserCreateRequestDto;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.service.UserService;
-import cn.com.nabotix.shareplatform.enums.UserAuthority;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 /**
  * 用户管理控制器
@@ -36,7 +34,7 @@ public class UserManageController {
      * @param userCreateRequest 用户创建请求
      * @return 创建的用户信息
      */
-    @PreAuthorize("hasAuthority('platform_admin')")
+    @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponseDto<User>> createUser(@RequestBody UserCreateRequestDto userCreateRequest) {
         try {
@@ -62,7 +60,7 @@ public class UserManageController {
 
             userService.addUserAuthority(
                     createdUser.getId(), 
-                    UserAuthority.institution_supervisor,
+                    UserAuthority.INSTITUTION_SUPERVISOR,
                     userDetails.getId());
 
             // 清除敏感信息

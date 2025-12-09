@@ -6,6 +6,8 @@ import cn.com.nabotix.shareplatform.dataset.dto.DatasetApprovalRequestDto;
 import cn.com.nabotix.shareplatform.dataset.dto.DatasetBaseDto;
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetService;
+import cn.com.nabotix.shareplatform.security.UserAuthority;
+import cn.com.nabotix.shareplatform.security.AuthorityUtil;
 import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 import cn.com.nabotix.shareplatform.user.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 数据集管理控制器
@@ -51,32 +50,22 @@ public class DatasetManageController {
      * 平台管理员和机构管理员可访问所有数据集，数据集上传员只能看到自己上传的数据集
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor', 'dataset_uploader')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<List<Dataset>>> getAllDatasets() {
-        List<Dataset> datasets;
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // 平台管理员可以看到所有数据集
-        if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "platform_admin".equals(authority.getAuthority()))) {
-            datasets = datasetService.getAllDatasets();
-        }
-        // 机构管理员可以看到本机构所有数据集
-        else if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "institution_supervisor".equals(authority.getAuthority()))) {
+        List<Dataset> datasets = new ArrayList<>();
+        AuthorityUtil.checkBuilder().whenHasAuthority(UserAuthority.PLATFORM_ADMIN, () -> {
+            // 平台管理员可以看到所有数据集
+            datasets.addAll(datasetService.getAllDatasets());
+        }).whenHasAuthority(UserAuthority.INSTITUTION_SUPERVISOR, () -> {
+            // 机构管理员可以看到本机构所有数据集
             UUID institutionId = getCurrentUserInstitutionId();
             if (institutionId != null) {
-                datasets = datasetService.getDatasetsByInstitutionId(institutionId);
-            } else {
-                // 没有关联机构的用户看不到任何数据集
-                datasets = List.of();
+                datasets.addAll(datasetService.getDatasetsByInstitutionId(institutionId));
             }
-        }
-        // 数据集上传员只能看到自己上传的数据集
-        else {
-            UUID userId = getCurrentUserId();
-            datasets = datasetService.getDatasetsByProviderId(userId);
-        }
+        }).whenHasAuthority(UserAuthority.DATASET_UPLOADER, () -> {
+            // 数据集上传员只能看到自己上传的数据集
+            datasets.addAll(datasetService.getDatasetsByProviderId(getCurrentUserId()));
+        }).execute();
 
         return ResponseEntity.ok(ApiResponseDto.success(datasets, "获取数据集列表成功"));
     }
@@ -86,7 +75,7 @@ public class DatasetManageController {
      * 平台管理员和机构管理员可访问所有数据集，数据集上传员只能看到自己上传数据集
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor', 'dataset_uploader')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<Dataset>> getDatasetById(@PathVariable UUID id) {
         Dataset dataset = datasetService.getDatasetById(id);
 
@@ -109,7 +98,7 @@ public class DatasetManageController {
      * 平台管理员、机构管理员和数据集上传员可创建数据集
      */
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor', 'dataset_uploader')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<Dataset>> createDataset(@RequestBody DatasetBaseDto datasetDto) {
         Dataset dataset = new Dataset();
         // 将 DTO 转换为实体
@@ -124,8 +113,8 @@ public class DatasetManageController {
         dataset.setVariableCount(datasetDto.getVariableCount());
         dataset.setKeywords(datasetDto.getKeywords());
         dataset.setSubjectAreaId(datasetDto.getSubjectAreaId());
-        dataset.setFileUrl(datasetDto.getFileUrl());
-        dataset.setDataDictUrl(datasetDto.getDataDictUrl());
+        dataset.setFileRecordId(datasetDto.getFileRecordId());
+        dataset.setDataDictRecordId(datasetDto.getDataDictRecordId());
         dataset.setPublished(datasetDto.getPublished());
         dataset.setShareAllData(datasetDto.getShareAllData());
         dataset.setDatasetLeader(datasetDto.getDatasetLeader());
@@ -134,13 +123,14 @@ public class DatasetManageController {
         dataset.setContactInfo(datasetDto.getContactInfo());
         dataset.setDemographicFields(datasetDto.getDemographicFields());
         dataset.setOutcomeFields(datasetDto.getOutcomeFields());
-        dataset.setTermsAgreementUrl(datasetDto.getTermsAgreementUrl());
+        dataset.setTermsAgreementRecordId(datasetDto.getTermsAgreementRecordId());
         dataset.setSamplingMethod(datasetDto.getSamplingMethod());
         dataset.setVersionNumber(datasetDto.getVersionNumber());
         dataset.setFirstPublishedDate(datasetDto.getFirstPublishedDate());
         dataset.setCurrentVersionDate(datasetDto.getCurrentVersionDate());
         dataset.setParentDatasetId(datasetDto.getParentDatasetId());
         dataset.setPrincipalInvestigator(datasetDto.getPrincipalInvestigator());
+        dataset.setApplicationInstitutionIds(datasetDto.getApplicationInstitutionIds());
 
         // 设置创建者和所属机构
         dataset.setProviderId(getCurrentUserId());
@@ -159,7 +149,7 @@ public class DatasetManageController {
      * 平台管理员可更新任意数据集，机构管理员和数据集上传员只能更新自己机构的数据集
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor', 'dataset_uploader')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<Dataset>> updateDataset(@PathVariable UUID id, @RequestBody DatasetBaseDto datasetDto) {
         Dataset dataset = datasetService.getDatasetById(id);
 
@@ -175,6 +165,7 @@ public class DatasetManageController {
         }
         // 修改过的数据集状态改为待审核
         dataset.setApproved(null);
+        dataset.setSupervisorId(null);
 
         // 更新字段
         dataset.setTitleCn(datasetDto.getTitleCn());
@@ -182,15 +173,14 @@ public class DatasetManageController {
         dataset.setType(datasetDto.getType());
         dataset.setCategory(datasetDto.getCategory());
         dataset.setProviderId(datasetDto.getProviderId());
-        dataset.setSupervisorId(datasetDto.getSupervisorId());
         dataset.setStartDate(datasetDto.getStartDate());
         dataset.setEndDate(datasetDto.getEndDate());
         dataset.setRecordCount(datasetDto.getRecordCount());
         dataset.setVariableCount(datasetDto.getVariableCount());
         dataset.setKeywords(datasetDto.getKeywords());
         dataset.setSubjectAreaId(datasetDto.getSubjectAreaId());
-        dataset.setFileUrl(datasetDto.getFileUrl());
-        dataset.setDataDictUrl(datasetDto.getDataDictUrl());
+        dataset.setFileRecordId(datasetDto.getFileRecordId());
+        dataset.setDataDictRecordId(datasetDto.getDataDictRecordId());
         dataset.setPublished(datasetDto.getPublished());
         dataset.setShareAllData(datasetDto.getShareAllData());
         dataset.setDatasetLeader(datasetDto.getDatasetLeader());
@@ -199,13 +189,14 @@ public class DatasetManageController {
         dataset.setContactInfo(datasetDto.getContactInfo());
         dataset.setDemographicFields(datasetDto.getDemographicFields());
         dataset.setOutcomeFields(datasetDto.getOutcomeFields());
-        dataset.setTermsAgreementUrl(datasetDto.getTermsAgreementUrl());
+        dataset.setTermsAgreementRecordId(datasetDto.getTermsAgreementRecordId());
         dataset.setSamplingMethod(datasetDto.getSamplingMethod());
         dataset.setVersionNumber(datasetDto.getVersionNumber());
         dataset.setFirstPublishedDate(datasetDto.getFirstPublishedDate());
         dataset.setCurrentVersionDate(datasetDto.getCurrentVersionDate());
         dataset.setParentDatasetId(datasetDto.getParentDatasetId());
         dataset.setPrincipalInvestigator(datasetDto.getPrincipalInvestigator());
+        dataset.setApplicationInstitutionIds(datasetDto.getApplicationInstitutionIds());
 
         Dataset updatedDataset = datasetService.updateDataset(id, dataset);
         return ResponseEntity.ok(ApiResponseDto.success(updatedDataset, "更新数据集成功"));
@@ -213,10 +204,10 @@ public class DatasetManageController {
 
     /**
      * 修改数据集审核状态（通过、驳回）
-     * 平台管理员可修改任意数据集的审核状态，机构管理员只能修改自己机构数据集的审核状态
+     * 平台管理员、机构管理员和数据集审核员可修改任意数据集的审核状态
      */
     @PutMapping("/{id}/approval")
-    @PreAuthorize("hasAnyAuthority('platform_admin', 'institution_supervisor')")
+    @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_APPROVER')")
     public ResponseEntity<ApiResponseDto<Dataset>> updateDatasetApprovalStatus(
             @PathVariable UUID id,
             @RequestBody DatasetApprovalRequestDto approvalRequest,
@@ -276,22 +267,10 @@ public class DatasetManageController {
      * @return 是否有权限
      */
     private boolean hasPermissionToApproveDataset(Dataset dataset) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // 平台管理员可以审批任何数据集
-        if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "platform_admin".equals(authority.getAuthority()))) {
-            return true;
-        }
-
-        // 机构管理员只能审批自己机构的数据集
-        if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "institution_supervisor".equals(authority.getAuthority()))) {
-            UUID userInstitutionId = getCurrentUserInstitutionId();
-            return userInstitutionId != null && userInstitutionId.equals(dataset.getInstitutionId());
-        }
-
-        return false;
+        return AuthorityUtil.checkBuilder()
+                .withAllowedAuthorities(UserAuthority.INSTITUTION_SUPERVISOR, UserAuthority.DATASET_APPROVER)
+                .withTargetInstitutionId(dataset.getInstitutionId())
+                .execute();
     }
 
     /**
@@ -301,21 +280,10 @@ public class DatasetManageController {
      * @return 是否有权限
      */
     private boolean hasPermissionToManageDataset(Dataset dataset) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // 验证通过机构管理员可更新任意数据集，机构管理员只能更新自己机构数据集
-        if (hasPermissionToApproveDataset(dataset)) {
-            return true;
-        }
-
-        // 数据集上传员只能更新自己上传的数据集
-        if (authentication.getAuthorities().stream()
-                .anyMatch(authority -> "dataset_uploader".equals(authority.getAuthority()))) {
-            UUID userId = getCurrentUserId();
-            return userId != null && userId.equals(dataset.getProviderId());
-        }
-
-        return false;
+        return AuthorityUtil.checkBuilder()
+                .withAllowedAuthorities(UserAuthority.INSTITUTION_SUPERVISOR, UserAuthority.DATASET_UPLOADER)
+                .withTargetInstitutionId(dataset.getInstitutionId())
+                .execute();
     }
 
     /**

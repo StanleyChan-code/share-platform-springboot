@@ -47,7 +47,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         List<GrantedAuthority> authorities = new ArrayList<>();
         for (UserAuthorityEntity authorityEntity : authorityEntityList) {
-            authorities.add(new SimpleGrantedAuthority(authorityEntity.getAuthority().name()));
+            authorities.add(new SimpleGrantedAuthority(authorityEntity.getAuthority().name().toUpperCase()));
         }
 
         return UserDetailsImpl.build(user, authorities);

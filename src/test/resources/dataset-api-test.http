@@ -17,6 +17,20 @@
 # 9664a7c9-e337-48d6-a55e-547c285f4ea7机构，管理员99ec84d8-9ccb-4a53-be97-4f385cb2d044
 @personToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
 
+# 示例机构ID列表
+@institutionId1 = 68e71bea-421c-42b6-b796-1a480190afdd
+@institutionId2 = 9664a7c9-e337-48d6-a55e-547c285f4ea7
+
+### 获取特定数据集的时间轴视图（匿名用户）
+GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
+
+### 获取特定数据集的时间轴视图（认证用户）
+GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 获取特定数据集的时间轴视图（机构内用户）
+GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
+Authorization: Bearer {{personToken}}
 
 ### 获取所有公开数据集
 GET http://localhost:8080/api/datasets
@@ -24,7 +38,7 @@ Authorization: Bearer {{datasetUploaderToken}}
 
 ### 获取所有公开数据集
 GET http://localhost:8080/api/datasets/timeline
-Authorization: Bearer {{personToken}}
+Authorization: Bearer {{datasetUploaderToken}}
 
 ### 根据ID获取特定公开数据集
 GET http://localhost:8080/api/datasets/{{datasetId}}
@@ -49,15 +63,15 @@ Authorization: Bearer {{platformAdminToken}}
 GET http://localhost:8080/api/manage/datasets/{{datasetId}}
 Authorization: Bearer {{institutionSupervisorToken}}
 
-### 平台管理员创建新数据集
+### 平台管理员创建新数据集（允许所有人申请）
 POST http://localhost:8080/api/manage/datasets
 Content-Type: application/json
-Authorization: Bearer {{platformAdminToken}}
+Authorization: Bearer {{datasetUploaderToken}}
 
 {
   "titleCn": "示例数据集",
   "description": "这是一个示例数据集",
-  "type": "cohort",
+  "type": "COHORT",
   "category": "医学研究",
   "supervisorId": "{{supervisorId}}",
   "startDate": "2023-01-01T00:00:00Z",
@@ -66,8 +80,8 @@ Authorization: Bearer {{platformAdminToken}}
   "variableCount": 50,
   "keywords": ["医学", "研究", "数据"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileUrl": "https://example.com/dataset.zip",
-  "dataDictUrl": "https://example.com/datadict.pdf",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
   "published": true,
   "shareAllData": true,
   "datasetLeader": "张三",
@@ -76,13 +90,88 @@ Authorization: Bearer {{platformAdminToken}}
   "contactInfo": "lisi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementUrl": "https://example.com/terms.pdf",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
   "samplingMethod": "随机抽样",
   "versionNumber": "1.0",
   "firstPublishedDate": "2023-06-01T00:00:00Z",
   "currentVersionDate": "2023-06-01T00:00:00Z",
   "parentDatasetId": null,
-  "principalInvestigator": "王五"
+  "principalInvestigator": "王五",
+  "applicationInstitutionIds": null
+}
+
+### 平台管理员创建新数据集（不允许任何人申请）
+POST http://localhost:8080/api/manage/datasets
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "titleCn": "示例数据集（禁止申请）",
+  "description": "这是一个禁止申请的示例数据集",
+  "type": "COHORT",
+  "category": "医学研究",
+  "supervisorId": "{{supervisorId}}",
+  "startDate": "2023-01-01T00:00:00Z",
+  "endDate": "2023-12-31T00:00:00Z",
+  "recordCount": 1000,
+  "variableCount": 50,
+  "keywords": ["医学", "研究", "数据"],
+  "subjectAreaId": "{{subjectAreaId}}",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
+  "published": true,
+  "shareAllData": true,
+  "datasetLeader": "张三",
+  "dataCollectionUnit": "某医院",
+  "contactPerson": "李四",
+  "contactInfo": "lisi@example.com",
+  "demographicFields": "{}",
+  "outcomeFields": "{}",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
+  "samplingMethod": "随机抽样",
+  "versionNumber": "1.0",
+  "firstPublishedDate": "2023-06-01T00:00:00Z",
+  "currentVersionDate": "2023-06-01T00:00:00Z",
+  "parentDatasetId": null,
+  "principalInvestigator": "王五",
+  "applicationInstitutionIds": []
+}
+
+### 平台管理员创建新数据集（仅允许特定机构申请）
+POST http://localhost:8080/api/manage/datasets
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "titleCn": "示例数据集（限制申请）",
+  "description": "这是一个限制申请的示例数据集",
+  "type": "COHORT",
+  "category": "医学研究",
+  "supervisorId": "{{supervisorId}}",
+  "startDate": "2023-01-01T00:00:00Z",
+  "endDate": "2023-12-31T00:00:00Z",
+  "recordCount": 1000,
+  "variableCount": 50,
+  "keywords": ["医学", "研究", "数据"],
+  "subjectAreaId": "{{subjectAreaId}}",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
+  "published": true,
+  "shareAllData": true,
+  "datasetLeader": "张三",
+  "dataCollectionUnit": "某医院",
+  "contactPerson": "李四",
+  "contactInfo": "lisi@example.com",
+  "demographicFields": "{}",
+  "outcomeFields": "{}",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
+  "samplingMethod": "随机抽样",
+  "versionNumber": "1.0",
+  "firstPublishedDate": "2023-06-01T00:00:00Z",
+  "currentVersionDate": "2023-06-01T00:00:00Z",
+  "parentDatasetId": null,
+  "principalInvestigator": "王五",
+  "applicationInstitutionIds": ["{{institutionId1}}", "{{institutionId2}}"]
 }
 
 ### 机构管理员创建新数据集
@@ -93,7 +182,7 @@ Authorization: Bearer {{institutionSupervisorToken}}
 {
   "titleCn": "机构管理员创建的数据集",
   "description": "由机构管理员创建的数据集",
-  "type": "cohort",
+  "type": "COHORT",
   "category": "医学研究",
   "providerId": "{{providerId}}",
   "supervisorId": "{{supervisorId}}",
@@ -103,8 +192,8 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "variableCount": 50,
   "keywords": ["医学", "研究", "数据"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileUrl": "https://example.com/dataset.zip",
-  "dataDictUrl": "https://example.com/datadict.pdf",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -114,13 +203,14 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "contactInfo": "lisi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementUrl": "https://example.com/terms.pdf",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
   "samplingMethod": "随机抽样",
   "versionNumber": "1.0",
   "firstPublishedDate": "2023-06-01T00:00:00Z",
   "currentVersionDate": "2023-06-01T00:00:00Z",
   "parentDatasetId": null,
-  "principalInvestigator": "王五"
+  "principalInvestigator": "王五",
+  "applicationInstitutionIds": null
 }
 
 ### 数据集上传员创建新数据集
@@ -131,7 +221,7 @@ Authorization: Bearer {{datasetUploaderToken}}
 {
   "titleCn": "示例数据集3",
   "description": "这是另2个示例数据集",
-  "type": "cohort",
+  "type": "COHORT",
   "category": "医学研究",
   "providerId": "7c34890d-e50b-44e1-991a-fbad1842fd25",
   "supervisorId": "c4d9798f-4701-4ea1-b49d-218b84235432",
@@ -141,8 +231,8 @@ Authorization: Bearer {{datasetUploaderToken}}
   "variableCount": 100,
   "keywords": ["医学", "研究", "数据"],
   "subjectAreaId": "{{researchSubjectId}}",
-  "fileUrl": "https://example.com/dataset2.zip",
-  "dataDictUrl": "https://example.com/datadict2.pdf",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -152,16 +242,17 @@ Authorization: Bearer {{datasetUploaderToken}}
   "contactInfo": "sunqi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementUrl": "https://example.com/terms2.pdf",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
   "samplingMethod": "分层抽样",
   "versionNumber": "1.0",
   "firstPublishedDate": "2023-07-01T00:00:00Z",
   "currentVersionDate": "2023-07-01T00:00:00Z",
   "parentDatasetId": null,
-  "principalInvestigator": "周八"
+  "principalInvestigator": "周八",
+  "applicationInstitutionIds": []
 }
 
-### 平台管理员更新数据集
+### 平台管理员更新数据集（修改申请机构设置）
 PUT http://localhost:8080/api/manage/datasets/{{datasetId}}
 Content-Type: application/json
 Authorization: Bearer {{platformAdminToken}}
@@ -169,7 +260,7 @@ Authorization: Bearer {{platformAdminToken}}
 {
   "titleCn": "更新后的示例数据集",
   "description": "这是一个更新后的示例数据集",
-  "type": "cohort",
+  "type": "COHORT",
   "category": "医学研究",
   "providerId": "{{providerId}}",
   "supervisorId": "{{supervisorId}}",
@@ -179,8 +270,8 @@ Authorization: Bearer {{platformAdminToken}}
   "variableCount": 75,
   "keywords": ["医学", "研究", "数据", "更新"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileUrl": "https://example.com/dataset_updated.zip",
-  "dataDictUrl": "https://example.com/datadict_updated.pdf",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -190,13 +281,14 @@ Authorization: Bearer {{platformAdminToken}}
   "contactInfo": "lisi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementUrl": "https://example.com/terms_updated.pdf",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
   "samplingMethod": "随机抽样",
   "versionNumber": "2.0",
   "firstPublishedDate": "2023-06-01T00:00:00Z",
   "currentVersionDate": "2023-12-01T00:00:00Z",
   "parentDatasetId": null,
-  "principalInvestigator": "王五"
+  "principalInvestigator": "王五",
+  "applicationInstitutionIds": ["{{institutionId1}}"]
 }
 
 ### 机构管理员更新数据集
@@ -207,7 +299,7 @@ Authorization: Bearer {{institutionSupervisorToken}}
 {
   "titleCn": "机构管理员更新的数据集",
   "description": "由机构管理员更新的数据集",
-  "type": "cohort",
+  "type": "COHORT",
   "category": "医学研究",
   "providerId": "{{providerId}}",
   "supervisorId": "{{supervisorId}}",
@@ -217,8 +309,8 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "variableCount": 75,
   "keywords": ["医学", "研究", "数据", "更新"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileUrl": "https://example.com/dataset_updated.zip",
-  "dataDictUrl": "https://example.com/datadict_updated.pdf",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -228,13 +320,14 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "contactInfo": "lisi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementUrl": "https://example.com/terms_updated.pdf",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
   "samplingMethod": "随机抽样",
   "versionNumber": "2.0",
   "firstPublishedDate": "2023-06-01T00:00:00Z",
   "currentVersionDate": "2023-12-01T00:00:00Z",
   "parentDatasetId": null,
-  "principalInvestigator": "王五"
+  "principalInvestigator": "王五",
+  "applicationInstitutionIds": null
 }
 
 ### 数据集上传员更新自己机构的数据集
@@ -245,7 +338,7 @@ Authorization: Bearer {{datasetUploaderToken}}
 {
   "titleCn": "更新后的示例数据集2",
   "description": "这是另一个更新后的示例数据集",
-  "type": "cohort",
+  "type": "COHORT",
   "category": "医学研究",
   "providerId": "{{providerId}}",
   "supervisorId": "{{supervisorId}}",
@@ -255,8 +348,8 @@ Authorization: Bearer {{datasetUploaderToken}}
   "variableCount": 125,
   "keywords": ["医学", "研究", "数据", "更新"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileUrl": "https://example.com/dataset2_updated.zip",
-  "dataDictUrl": "https://example.com/datadict2_updated.pdf",
+  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
+  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -266,13 +359,14 @@ Authorization: Bearer {{datasetUploaderToken}}
   "contactInfo": "sunqi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementUrl": "https://example.com/terms2_updated.pdf",
+  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
   "samplingMethod": "分层抽样",
   "versionNumber": "2.0",
   "firstPublishedDate": "2023-07-01T00:00:00Z",
   "currentVersionDate": "2023-12-01T00:00:00Z",
   "parentDatasetId": "{{parentDatasetId}}",
-  "principalInvestigator": "周八"
+  "principalInvestigator": "周八",
+  "applicationInstitutionIds": ["{{institutionId2}}"]
 }
 
 ### 平台管理员删除数据集

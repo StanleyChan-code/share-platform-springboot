@@ -1,7 +1,7 @@
 package cn.com.nabotix.shareplatform.dataset.dto;
 
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
-import cn.com.nabotix.shareplatform.enums.DatasetType;
+import cn.com.nabotix.shareplatform.dataset.entity.DatasetType;
 import cn.com.nabotix.shareplatform.researchsubject.entity.ResearchSubject;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import lombok.Data;
@@ -50,6 +50,9 @@ public class PublicDatasetDto {
 
     private Instant createdAt;
     private Instant updatedAt;
+    
+    // 申请机构ID列表
+    private UUID[] applicationInstitutionIds;
     
     // 添加子数据集字段（随访数据集）
     private PublicDatasetDto[] followUpDatasets;
@@ -135,6 +138,7 @@ public class PublicDatasetDto {
         publicDatasetDto.setCurrentVersionDate(dataset.getCurrentVersionDate());
         publicDatasetDto.setCreatedAt(dataset.getCreatedAt());
         publicDatasetDto.setUpdatedAt(dataset.getUpdatedAt());
+        publicDatasetDto.setApplicationInstitutionIds(dataset.getApplicationInstitutionIds());
         return publicDatasetDto;
     }
 }

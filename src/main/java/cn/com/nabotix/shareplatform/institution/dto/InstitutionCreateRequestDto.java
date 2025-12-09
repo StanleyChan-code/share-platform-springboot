@@ -1,7 +1,7 @@
 package cn.com.nabotix.shareplatform.institution.dto;
 
-import cn.com.nabotix.shareplatform.enums.IdType;
-import cn.com.nabotix.shareplatform.enums.InstitutionType;
+import cn.com.nabotix.shareplatform.user.entity.IdType;
+import cn.com.nabotix.shareplatform.institution.entity.InstitutionType;
 import lombok.Data;
 
 /**

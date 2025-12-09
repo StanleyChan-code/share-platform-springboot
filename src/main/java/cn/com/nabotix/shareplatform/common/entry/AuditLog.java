@@ -1,4 +1,4 @@
-package cn.com.nabotix.shareplatform.entity;
+package cn.com.nabotix.shareplatform.common.entry;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -10,8 +10,8 @@ import java.util.UUID;
 
 @Data
 @Entity
-@Table(name = "audit_log_entries")
-public class AuditLogEntry {
+@Table(name = "audit_log")
+public class AuditLog {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
