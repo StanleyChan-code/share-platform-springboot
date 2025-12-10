@@ -3,12 +3,13 @@ package cn.com.nabotix.shareplatform.dataset.service;
 import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.repository.DatasetRepository;
-import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
 import cn.com.nabotix.shareplatform.researchsubject.entity.ResearchSubject;
 import cn.com.nabotix.shareplatform.researchsubject.repository.ResearchSubjectRepository;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
+import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
 import jakarta.persistence.Transient;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,38 +32,36 @@ public class DatasetService {
     private final DatasetRepository datasetRepository;
     private final ResearchSubjectRepository researchSubjectRepository;
     private final UserRepository userRepository;
-    private final FileManagementService fileManagementService;
+    private final DatasetVersionService datasetVersionService;
 
     @Autowired
     public DatasetService(DatasetRepository datasetRepository,
                           ResearchSubjectRepository researchSubjectRepository,
                           UserRepository userRepository,
-                          FileManagementService fileManagementService) {
+                          DatasetVersionService datasetVersionService) {
         this.datasetRepository = datasetRepository;
         this.researchSubjectRepository = researchSubjectRepository;
         this.userRepository = userRepository;
-        this.fileManagementService = fileManagementService;
+        this.datasetVersionService = datasetVersionService;
     }
 
-    /**
-     * 根据ID获取公开数据集（适用于匿名用户）
-     */
-    public PublicDatasetDto getPublicDatasetById(UUID id) {
-        return datasetRepository.findById(id)
-                .filter(d -> d.getApproved() != null && d.getPublished() != null &&
-                        d.getApproved() && d.getPublished())
-                .map(this::convertToPublicDto)
-                .orElse(null);
-    }
 
     /**
-     * 根据ID和用户机构ID获取数据集（用于机构内用户访问）
+     * 根据ID和用户机构ID获取数据集
+     *
+     * @param id                数据集ID
+     * @param userInstitutionId 用户机构ID，当未空时则滤出公开可见的数据集
      */
     public PublicDatasetDto getDatasetByIdAndUserInstitution(UUID id, UUID userInstitutionId) {
+        return getDatasetByIdAndUserInstitution(id, userInstitutionId, false);
+    }
+
+    public PublicDatasetDto getDatasetByIdAndUserInstitution(UUID id, UUID userInstitutionId, boolean loadTimeline) {
         return datasetRepository.findById(id)
-                .filter(d -> d.getApproved() != null && d.getApproved() &&
-                        d.getPublished() != null && (d.getPublished() || d.getInstitutionId().equals(userInstitutionId)))
-                .map(this::convertToPublicDto)
+                .filter(d -> checkPublicDatasetAssessPermission(d, userInstitutionId))
+                .map(dataset -> loadTimeline ?
+                        convertToTimelinePublicDto(dataset, userInstitutionId) :
+                        convertToPublicDto(dataset))
                 .orElse(null);
     }
 
@@ -79,9 +78,9 @@ public class DatasetService {
 
     /**
      * 获取机构内可见的顶层数据集列表（parentDatasetId为空）
-     * 返回完全公开的顶层数据集 + 本机构已批准但未公开的顶层数据集
+     * 返回完全公开的顶层数据集 + 已批准但未公开的用户机构能申请的顶层数据集
      */
-    public Page<PublicDatasetDto> getInstitutionVisibleTopLevelDatasets(UUID institutionId, Pageable pageable) {
+    public Page<PublicDatasetDto> getAllInstitutionVisibleTopLevelDatasets(UUID institutionId, Pageable pageable) {
         // 使用新的查询方法，直接在数据库层面合并查询并分页
         Page<Dataset> datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
         List<PublicDatasetDto> dtoList = datasetPage.getContent().stream()
@@ -102,7 +101,7 @@ public class DatasetService {
 
         // 转换为时间轴DTO（包含子数据集）
         List<PublicDatasetDto> timelineDtoList = datasetPage.getContent().stream()
-                .map(this::convertToTimelinePublicDto)
+                .map(dataset -> convertToTimelinePublicDto(dataset, null))
                 .sorted(Comparator.comparing(PublicDatasetDto::getStartDate))
                 .collect(Collectors.toList());
 
@@ -117,7 +116,7 @@ public class DatasetService {
     public Page<PublicDatasetDto> getTimelineInstitutionVisibleDatasets(UUID institutionId, Pageable pageable) {
         Page<Dataset> datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
         List<PublicDatasetDto> timelineDtoList = datasetPage.getContent().stream()
-                .map(dataset -> convertToTimelineInstitutionDto(dataset, institutionId))
+                .map(dataset -> convertToTimelinePublicDto(dataset, institutionId))
                 .collect(Collectors.toList());
         return new PageImpl<>(timelineDtoList, pageable, datasetPage.getTotalElements());
     }
@@ -125,36 +124,13 @@ public class DatasetService {
     /**
      * 将Dataset实体转换为PublicDatasetDto（时间轴版本，包含子数据集）
      */
-    public PublicDatasetDto convertToTimelinePublicDto(Dataset dataset) {
+    public PublicDatasetDto convertToTimelinePublicDto(Dataset dataset, UUID userInstitutionId) {
         PublicDatasetDto dto = convertToPublicDto(dataset);
 
         // 获取该数据集的子数据集（随访数据集）
         if (dto.getId() != null) {
             PublicDatasetDto[] children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
-                    .filter(child -> child.getApproved() != null && child.getApproved() &&
-                            child.getPublished() != null && child.getPublished())
-                    .sorted(Comparator.comparing(Dataset::getStartDate))
-                    .map(this::convertToPublicDto)
-                    .toArray(PublicDatasetDto[]::new);
-
-            dto.setFollowUpDatasets(children);
-        }
-
-        return dto;
-    }
-
-    /**
-     * 将Dataset实体转换为PublicDatasetDto（针对机构用户的版本，包含子数据集）
-     */
-    public PublicDatasetDto convertToTimelineInstitutionDto(Dataset dataset, UUID userInstitutionId) {
-        PublicDatasetDto dto = convertToPublicDto(dataset);
-
-        // 获取该数据集的子数据集（随访数据集）
-        if (dto.getId() != null) {
-
-            PublicDatasetDto[] children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
-                    .filter(child -> child.getApproved() != null && child.getApproved() &&
-                            child.getPublished() != null && (child.getPublished() || child.getInstitutionId().equals(userInstitutionId)))
+                    .filter(child -> checkPublicDatasetAssessPermission(child, userInstitutionId))
                     .sorted(Comparator.comparing(Dataset::getStartDate))
                     .map(this::convertToPublicDto)
                     .toArray(PublicDatasetDto[]::new);
@@ -168,20 +144,58 @@ public class DatasetService {
     /**
      * 将Dataset实体转换为PublicDatasetDto
      */
-    public PublicDatasetDto convertToPublicDto(Dataset dataset) {
+    public PublicDatasetDto convertToPublicDto(@NonNull Dataset dataset) {
         // 设置学科领域信息
         ResearchSubject subjectArea = dataset.getSubjectAreaId() != null ?
                 researchSubjectRepository.findById(dataset.getSubjectAreaId()).orElse(null) : null;
 
-        // 设置用户信息
-        User supervisor = dataset.getSupervisorId() != null ?
-                userRepository.findById(dataset.getSupervisorId()).orElse(null) : null;
-
+        // 获取提供者信息
         User provider = dataset.getProviderId() != null ?
                 userRepository.findById(dataset.getProviderId()).orElse(null) : null;
 
-        return PublicDatasetDto.fromEntity(dataset, subjectArea, supervisor, provider);
+        // 获取版本信息
+        PublicDatasetDto.DatasetVersionDto[] versionsDtos = dataset.getId() == null ?
+                null :
+                datasetVersionService.findAllVersionsByDatasetId(dataset.getId()).stream()
+                        .map(datasetVersionService::convertToDto)
+                        .toArray(PublicDatasetDto.DatasetVersionDto[]::new);
+
+        return PublicDatasetDto.fromEntity(dataset, subjectArea, provider, versionsDtos);
     }
+
+
+    /**
+     * 查看公开数据集的权限控制
+     */
+    public boolean checkPublicDatasetAssessPermission(Dataset dataset, UUID userInstitutionId) {
+        if (dataset == null || dataset.getId() == null) {
+            return false;
+        }
+
+        // 获取数据集的机构ID
+        UUID datasetInstitutionId = dataset.getInstitutionId();
+
+        // 如果数据集的机构ID为空，或者未审核，则返回false
+        if (datasetInstitutionId == null) {
+            return false;
+        }
+        if (datasetVersionService.findLatestApprovedVersionByDatasetId(dataset.getId()) == null) {
+            return false;
+        }
+
+        // 如果公开访问，则返回true；如果非公开访问就必须检查用户机构id
+        if (dataset.getPublished()) {
+            return true;
+        } else if (userInstitutionId == null) {
+            return false;
+        }
+
+        // 查阅数据集时，数据集所属机构与用户所属机构没有关系，同一机构也不代表用户能够查看数据集
+        // 如果不是公开访问，则判断用户当前机构id是否在允许申请的机构列表中
+        UUID[] applicationInstitutionIds = dataset.getApplicationInstitutionIds();
+        return applicationInstitutionIds != null && Arrays.asList(applicationInstitutionIds).contains(userInstitutionId);
+    }
+
 
     /**
      * 获取所有数据集
@@ -215,21 +229,19 @@ public class DatasetService {
      * 创建新数据集
      */
     @Transient
-    public Dataset createDataset(Dataset dataset) {
+    public Dataset createDataset(Dataset dataset, DatasetVersion firstVersion) {
         // 设置创建和更新时间
         dataset.setCreatedAt(Instant.now());
         dataset.setUpdatedAt(Instant.now());
 
-        Dataset saveDateset = datasetRepository.save(dataset);
+        Dataset savedDataset = datasetRepository.save(dataset);
 
-        if (dataset.getFileRecordId() == null) {
-            return null;
-        }
+        // 创建第一个版本
+        firstVersion.setDatasetId(savedDataset.getId());
+        firstVersion.setCreatedAt(Instant.now());
+        datasetVersionService.save(firstVersion);
 
-        // 移动相关文件到指定目录
-        moveDatasetFiles(saveDateset);
-        
-        return saveDateset;
+        return savedDataset;
     }
 
     /**
@@ -238,118 +250,42 @@ public class DatasetService {
     public Dataset updateDataset(UUID id, Dataset datasetDetails) {
         Dataset dataset = datasetRepository.findById(id).orElse(null);
         if (dataset != null) {
-            // 保存旧的文件记录ID，以便后续比较
-            UUID oldFileRecordId = dataset.getFileRecordId();
-            UUID oldDataDictRecordId = dataset.getDataDictRecordId();
-            UUID oldTermsAgreementRecordId = dataset.getTermsAgreementRecordId();
-
             // 更新字段
             dataset.setTitleCn(datasetDetails.getTitleCn());
             dataset.setDescription(datasetDetails.getDescription());
             dataset.setType(datasetDetails.getType());
             dataset.setCategory(datasetDetails.getCategory());
             dataset.setProviderId(datasetDetails.getProviderId());
-            dataset.setSupervisorId(datasetDetails.getSupervisorId());
+            dataset.setDatasetLeader(datasetDetails.getDatasetLeader());
+            dataset.setPrincipalInvestigator(datasetDetails.getPrincipalInvestigator());
+            dataset.setDataCollectionUnit(datasetDetails.getDataCollectionUnit());
             dataset.setStartDate(datasetDetails.getStartDate());
             dataset.setEndDate(datasetDetails.getEndDate());
             dataset.setRecordCount(datasetDetails.getRecordCount());
             dataset.setVariableCount(datasetDetails.getVariableCount());
             dataset.setKeywords(datasetDetails.getKeywords());
             dataset.setSubjectAreaId(datasetDetails.getSubjectAreaId());
-            dataset.setFileRecordId(datasetDetails.getFileRecordId());
-            dataset.setDataDictRecordId(datasetDetails.getDataDictRecordId());
-            dataset.setApproved(datasetDetails.getApproved());
+            dataset.setSamplingMethod(datasetDetails.getSamplingMethod());
             dataset.setPublished(datasetDetails.getPublished());
+            dataset.setSearchCount(datasetDetails.getSearchCount());
             dataset.setShareAllData(datasetDetails.getShareAllData());
-            dataset.setDatasetLeader(datasetDetails.getDatasetLeader());
-            dataset.setDataCollectionUnit(datasetDetails.getDataCollectionUnit());
             dataset.setContactPerson(datasetDetails.getContactPerson());
             dataset.setContactInfo(datasetDetails.getContactInfo());
             dataset.setDemographicFields(datasetDetails.getDemographicFields());
             dataset.setOutcomeFields(datasetDetails.getOutcomeFields());
-            dataset.setTermsAgreementRecordId(datasetDetails.getTermsAgreementRecordId());
-            dataset.setSamplingMethod(datasetDetails.getSamplingMethod());
-            dataset.setVersionNumber(datasetDetails.getVersionNumber());
             dataset.setFirstPublishedDate(datasetDetails.getFirstPublishedDate());
             dataset.setCurrentVersionDate(datasetDetails.getCurrentVersionDate());
             dataset.setParentDatasetId(datasetDetails.getParentDatasetId());
-            dataset.setPrincipalInvestigator(datasetDetails.getPrincipalInvestigator());
             dataset.setInstitutionId(datasetDetails.getInstitutionId());
             dataset.setApplicationInstitutionIds(datasetDetails.getApplicationInstitutionIds());
 
             // 更新修改时间
             dataset.setUpdatedAt(Instant.now());
-            
-            // 移动相关文件到指定目录
-            moveDatasetFiles(dataset);
 
             // 保存更新后的数据集
-            Dataset updatedDataset = datasetRepository.save(dataset);
-
-            // 检查是否有文件记录ID变更，如果有则标记删除旧文件
-            handleFileRecordChanges(oldFileRecordId, dataset.getFileRecordId());
-            handleFileRecordChanges(oldDataDictRecordId, dataset.getDataDictRecordId());
-            handleFileRecordChanges(oldTermsAgreementRecordId, dataset.getTermsAgreementRecordId());
-
-            return updatedDataset;
+            return datasetRepository.save(dataset);
         }
         return null;
-    }
-    
-    /**
-     * 将数据集相关文件移动到指定目录
-     * @param dataset 数据集实体
-     */
-    private void moveDatasetFiles(Dataset dataset) {
-        // 构建数据集文件存储路径
-        String basePath = "dataset/" + dataset.getId() + "/";
-        
-        // 移动数据文件
-        if (dataset.getFileRecordId() != null) {
-            try {
-                fileManagementService.moveFileToDirectory(dataset.getFileRecordId(), basePath);
-            } catch (Exception e) {
-                // 记录日志，但不中断操作
-                log.error("Failed to move data file: {}", e.getMessage());
-            }
-        }
-        
-        // 移动数据字典文件
-        if (dataset.getDataDictRecordId() != null) {
-            try {
-                fileManagementService.moveFileToDirectory(dataset.getDataDictRecordId(), basePath);
-            } catch (Exception e) {
-                // 记录日志，但不中断操作
-                log.error("Failed to move data dictionary file: {}", e.getMessage());
-            }
-        }
-        
-        // 移动条款协议文件
-        if (dataset.getTermsAgreementRecordId() != null) {
-            try {
-                fileManagementService.moveFileToDirectory(dataset.getTermsAgreementRecordId(), basePath);
-            } catch (Exception e) {
-                // 记录日志，但不中断操作
-                log.error("Failed to move terms agreement file: {}", e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * 处理文件记录变更，如果文件记录ID发生变化，则标记删除旧文件
-     * @param oldFileRecordId 旧文件记录ID
-     * @param newFileRecordId 新文件记录ID
-     */
-    private void handleFileRecordChanges(UUID oldFileRecordId, UUID newFileRecordId) {
-        // 如果旧文件记录ID不为空且与新文件记录ID不同，则标记删除旧文件
-        if (oldFileRecordId != null && !oldFileRecordId.equals(newFileRecordId)) {
-            try {
-                fileManagementService.markFileAsDeleted(oldFileRecordId);
-            } catch (Exception e) {
-                // 记录日志，但不中断操作
-                log.error("Failed to mark old file as deleted: {}", e.getMessage());
-            }
-        }
     }
 
     /**
@@ -361,25 +297,5 @@ public class DatasetService {
             return true;
         }
         return false;
-    }
-
-    /**
-     * 更新数据集审核状态
-     *
-     * @param id         数据集ID
-     * @param approved   审核状态
-     * @param reviewerId 审核人ID
-     * @return 更新后的数据集
-     */
-    public Dataset updateDatasetApprovalStatus(UUID id, Boolean approved, UUID reviewerId) {
-        Dataset dataset = datasetRepository.findById(id).orElse(null);
-        if (dataset != null) {
-            dataset.setApproved(approved);
-            dataset.setSupervisorId(reviewerId);
-            dataset.setUpdatedAt(Instant.now());
-
-            return datasetRepository.save(dataset);
-        }
-        return null;
     }
 }

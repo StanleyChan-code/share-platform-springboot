@@ -1,4 +1,4 @@
-package cn.com.nabotix.shareplatform.repository;
+package cn.com.nabotix.shareplatform.dataset.repository;
 
 import cn.com.nabotix.shareplatform.dataset.entity.Application;
 import cn.com.nabotix.shareplatform.dataset.entity.ApplicationStatus;
@@ -30,7 +30,7 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
      * @param pageable   分页参数
      * @return 申请记录分页结果
      */
-    @Query("SELECT a FROM Application a JOIN Dataset d ON a.datasetId = d.id WHERE d.providerId = :providerId")
+    @Query("SELECT a FROM Application a JOIN DatasetVersion dv ON a.datasetVersionId = dv.id JOIN Dataset d ON dv.datasetId = d.id WHERE d.providerId = :providerId")
     Page<Application> findAllByProviderId(@Param("providerId") UUID providerId, Pageable pageable);
     
     /**
@@ -41,7 +41,7 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
      * @param pageable      分页参数
      * @return 申请记录分页结果
      */
-    @Query("SELECT a FROM Application a JOIN Dataset d ON a.datasetId = d.id WHERE d.institutionId = :institutionId AND a.status = :status")
+    @Query("SELECT a FROM Application a JOIN DatasetVersion dv ON a.datasetVersionId = dv.id JOIN Dataset d ON dv.datasetId = d.id WHERE d.institutionId = :institutionId AND a.status = :status")
     Page<Application> findAllByInstitutionIdAndStatus(
             @Param("institutionId") UUID institutionId,
             @Param("status") ApplicationStatus status,

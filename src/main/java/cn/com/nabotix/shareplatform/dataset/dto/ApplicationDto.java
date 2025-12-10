@@ -19,9 +19,9 @@ public class ApplicationDto {
     private UUID id;
 
     /**
-     * 数据集ID
+     * 数据集版本ID
      */
-    private UUID datasetId;
+    private UUID datasetVersionId;
 
     /**
      * 数据集标题
@@ -130,7 +130,7 @@ public class ApplicationDto {
 
         ApplicationDto dto = new ApplicationDto();
         dto.setId(application.getId());
-        dto.setDatasetId(application.getDatasetId());
+        dto.setDatasetVersionId(application.getDatasetVersionId());
         dto.setApplicantId(application.getApplicantId());
         dto.setSupervisorId(application.getSupervisorId());
         dto.setApplicantRole(application.getApplicantRole());

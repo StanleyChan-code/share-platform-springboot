@@ -2,6 +2,7 @@ package cn.com.nabotix.shareplatform.security;
 
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
  *
  * @author 陈雍文
  */
+@Slf4j
 @Component
 public class AuthorityUtil {
 
@@ -25,6 +27,23 @@ public class AuthorityUtil {
     @Autowired
     public void setUserService(UserService userService) {
         AuthorityUtil.userService = userService;
+    }
+
+    public static boolean isAuthenticated() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null &&
+                authentication.isAuthenticated() &&
+                !"anonymousUser".equals(authentication.getPrincipal());
+    }
+
+    public static User getCurrentUser() {
+        if (!isAuthenticated()) {
+            return null;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        return userService.getUserByUserId(userDetails.getId());
     }
 
     /**
@@ -48,6 +67,7 @@ public class AuthorityUtil {
         private final List<Map.Entry<UserAuthority, Runnable>> orderedAuthorityActions = new ArrayList<>();
         private Runnable checkTrueAction;
         private Runnable checkFalseAction;
+        private Runnable anonymousAction;
 
 
         /**
@@ -100,9 +120,8 @@ public class AuthorityUtil {
          * @param authority 权限
          * @param action    对应的操作
          * @return Builder实例
-         *
          * @throws IllegalArgumentException 如果权限或操作为空或者权限操作已设置。
-         * 同时使用了whenHasAuthority和withAllowedAuthorities也会导致错误
+         *                                  同时使用了whenHasAuthority和withAllowedAuthorities也会导致错误
          */
         public AuthorityCheckerBuilder whenHasAuthority(UserAuthority authority, Runnable action) {
             if (authority == null || action == null) {
@@ -114,6 +133,14 @@ public class AuthorityUtil {
             }
             orderedAuthorityActions.add(Map.entry(authority, action));
             allowedAuthorities.add(authority);
+            return this;
+        }
+
+        public AuthorityCheckerBuilder whenAnonymous(Runnable action) {
+            if (action == null) {
+                throw new IllegalArgumentException("操作不能为空");
+            }
+            this.anonymousAction = action;
             return this;
         }
 
@@ -160,7 +187,10 @@ public class AuthorityUtil {
         private boolean checkAndExecute() {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                if (anonymousAction != null) {
+                    anonymousAction.run();
+                }
                 return false;
             }
 
@@ -192,7 +222,6 @@ public class AuthorityUtil {
             if (currentUserId == null) {
                 return false;
             }
-
             User currentUser = userService.getUserByUserId(currentUserId);
             if (currentUser == null) {
                 return false;
@@ -281,6 +310,14 @@ public class AuthorityUtil {
             for (UserAuthority authority : allowedAuthorities) {
                 switch (authority) {
                     case DATASET_UPLOADER:
+                        // 数据上传者只能管理自己的数据
+                        if (targetUserId == null || !targetUserId.equals(currentUser.getId())) {
+                            if (targetUserId ==  null) {
+                                log.warn("DATASET_UPLOADER权限检查需要配置目标用户ID，请检查权限配置");
+                            }
+                            return false;
+                        }
+                        // 此外还需要检查是否在同一个机构
                     case DATASET_APPROVER:
                         if (targetInstitutionId.equals(currentUser.getInstitutionId())) {
                             return true;

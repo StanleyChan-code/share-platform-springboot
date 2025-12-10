@@ -1,4 +1,5 @@
-@applicationId=87963886-662a-4348-969b-46131d2f7462
+@applicationId=3f0b4db8-1896-4604-ae7d-82e989a909cb
+@datasetVersionId=acdb8689-9ed8-41f6-83c7-90a06d4e5ed5
 
 # 用户令牌（普通数据集用户）
 @datasetUserToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
@@ -15,14 +16,13 @@
 # 数据集申请审核员令牌
 @datasetApproverToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDMwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
 
-### 用户申请数据集
-@datasetId = e621aab7-7660-42c9-807d-1435861d6e42
+### 用户申请数据集版本
 POST http://localhost:8080/api/applications
 Content-Type: application/json
 Authorization: Bearer {{datasetUserToken}}
 
 {
-  "datasetId": "{{datasetId}}",
+  "datasetVersionId": "{{datasetVersionId}}",
   "applicantRole": "TEAM_RESEARCHER",
   "applicantType": "科研团队",
   "projectTitle": "心血管疾病研究项目",
@@ -88,3 +88,7 @@ Authorization: Bearer {{platformAdminToken}}
 ### 申请审核员查看已处理申请记录列表
 GET http://localhost:8080/api/manage/applications/processed-applications?page=0&size=10&sortBy=submittedAt&sortDir=desc
 Authorization: Bearer {{institutionSupervisorToken}}
+
+### 申请审核员查看已处理申请记录列表（使用数据集审核员令牌）
+GET http://localhost:8080/api/manage/applications/processed-applications?page=0&size=10&sortBy=submittedAt&sortDir=desc
+Authorization: Bearer {{datasetApproverToken}}

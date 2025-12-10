@@ -12,6 +12,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * 数据集仓库接口
+ * 
+ * 提供数据集的CRUD操作以及特定查询方法
+ * 继承自JpaRepository，支持基本的增删改查功能
+ * 
+ * @author 陈雍文
+ */
 @Repository
 public interface DatasetRepository extends JpaRepository<Dataset, UUID> {
     List<Dataset> findByInstitutionId(UUID institutionId);
@@ -22,20 +30,25 @@ public interface DatasetRepository extends JpaRepository<Dataset, UUID> {
 
     /**
      * 查询公开可见且没有父数据集的数据集（已批准且已发布的顶层数据集）- 分页版本
+     *
      * @param pageable 分页参数
      * @return 公开可见的顶层数据集分页结果
      */
-    @Query("SELECT d FROM Dataset d WHERE d.approved = true AND d.published = true AND d.parentDatasetId IS NULL")
+    @Query("SELECT d FROM Dataset d WHERE d.published = true AND d.parentDatasetId IS NULL AND " +
+            "EXISTS (SELECT 1 FROM DatasetVersion dv WHERE dv.datasetId = d.id AND dv.approved = true)")
     Page<Dataset> findPublicVisibleTopLevelDatasets(Pageable pageable);
 
     /**
      * 查询公开可见或者指定机构内可见且没有父数据集的数据集（已批准的顶层数据集）- 分页版本
+     *
      * @param institutionId 机构ID
-     * @param pageable 分页参数
+     * @param pageable      分页参数
      * @return 公开可见或机构内可见的顶层数据集分页结果
      */
-    @Query("SELECT d FROM Dataset d WHERE d.approved = true AND d.parentDatasetId IS NULL AND " +
-           "(d.published = true OR (d.published = false AND d.institutionId = :institutionId))")
+    @Query("SELECT d FROM Dataset d WHERE " +
+            "d.parentDatasetId IS NULL AND " +
+            "(d.published = true OR (d.published = false AND :institutionId IN (d.applicationInstitutionIds))) AND " +
+            "EXISTS (SELECT 1 FROM DatasetVersion dv WHERE dv.datasetId = d.id AND dv.approved = true)")
     Page<Dataset> findPublicOrInstitutionVisibleTopLevelDatasets(@Param("institutionId") UUID institutionId, Pageable pageable);
 
 }

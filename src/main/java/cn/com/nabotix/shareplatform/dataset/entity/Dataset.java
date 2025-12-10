@@ -51,12 +51,6 @@ public class Dataset {
     private UUID providerId;
 
     /**
-     * 数据集审批者ID
-     */
-    @Column(name = "supervisor_id")
-    private UUID supervisorId;
-
-    /**
      * 数据集负责人
      */
     @Column(name = "dataset_leader")
@@ -122,30 +116,7 @@ public class Dataset {
     private String samplingMethod;
 
     /**
-     * 数据文件记录ID
-     */
-    @Column(name = "file_record_id")
-    private UUID fileRecordId;
-
-    /**
-     * 数据字典文件记录ID
-     */
-    @Column(name = "data_dict_record_id")
-    private UUID dataDictRecordId;
-
-    /**
-     * 条款协议文件记录ID
-     */
-    @Column(name = "terms_agreement_record_id")
-    private UUID termsAgreementRecordId;
-
-    /**
-     * 审核状态(true:已审核, false:未审核)
-     */
-    private Boolean approved = false;
-
-    /**
-     * 对外发布状态(true:已发布, false:未发布)
+     * 是否允许公开查看
      */
     private Boolean published = false;
 
@@ -186,12 +157,6 @@ public class Dataset {
     @Column(name = "outcome_fields", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private String outcomeFields;
-
-    /**
-     * 版本号
-     */
-    @Column(name = "version_number")
-    private String versionNumber;
 
     /**
      * 首次发布时间

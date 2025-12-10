@@ -49,15 +49,16 @@ public class ApplicationController {
             @Valid @RequestBody ApplicationCreateRequestDto requestDto) {
         try {
             // 获取当前用户ID
-            UUID applicantId = getCurrentUserId();
-            if (applicantId == null) {
+            UUID userId = getCurrentUserId();
+            if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ApiResponseDto.error("用户未登录"));
             }
 
             // 构造ApplicationDto
             ApplicationDto applicationDto = new ApplicationDto();
-            applicationDto.setDatasetId(requestDto.getDatasetId());
+            applicationDto.setDatasetVersionId(requestDto.getDatasetVersionId());
+            applicationDto.setApplicantId(userId);
             applicationDto.setApplicantRole(requestDto.getApplicantRole());
             applicationDto.setApplicantType(requestDto.getApplicantType());
             applicationDto.setProjectTitle(requestDto.getProjectTitle());
@@ -68,10 +69,10 @@ public class ApplicationController {
             applicationDto.setApprovalDocumentId(requestDto.getApprovalDocumentId());
 
             // 创建申请
-            Application application = applicationService.createApplication(applicationDto, applicantId);
+            Application application = applicationService.createApplication(applicationDto, userId);
 
             // 转换为DTO并返回
-            ApplicationDto resultDto = applicationService.getApplicationById(application.getId());
+            ApplicationDto resultDto = applicationService.getApplicationDtoById(application.getId());
             return ResponseEntity.ok(ApiResponseDto.success(resultDto, "申请提交成功"));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -105,7 +106,7 @@ public class ApplicationController {
                     id, providerId, reviewRequest.getNotes(), reviewRequest.getApproved());
 
             // 转换为DTO并返回
-            ApplicationDto resultDto = applicationService.getApplicationById(application.getId());
+            ApplicationDto resultDto = applicationService.getApplicationDtoById(application.getId());
             return ResponseEntity.ok(ApiResponseDto.success(resultDto, "审核完成"));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)

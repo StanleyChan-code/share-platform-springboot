@@ -11,9 +11,9 @@ import java.util.UUID;
 @Data
 public class ApplicationCreateRequestDto {
     /**
-     * 数据集ID
+     * 数据集版本ID
      */
-    private UUID datasetId;
+    private UUID datasetVersionId;
 
     /**
      * 申请人角色

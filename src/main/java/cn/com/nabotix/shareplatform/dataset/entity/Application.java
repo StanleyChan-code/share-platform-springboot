@@ -22,10 +22,10 @@ public class Application {
     private UUID id;
 
     /**
-     * 数据集ID，关联的数据集标识符
+     * 数据集版本ID，关联的数据集版本标识符
      */
-    @Column(name = "dataset_id", nullable = false)
-    private UUID datasetId;
+    @Column(name = "dataset_version_id", nullable = false)
+    private UUID datasetVersionId;
 
     /**
      * 申请人ID，申请使用数据的用户标识符

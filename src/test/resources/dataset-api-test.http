@@ -1,4 +1,4 @@
-@datasetId=e621aab7-7660-42c9-807d-1435861d6e42
+@datasetId=52c50e97-baa8-41ff-92c5-7ea998f216f5
 @parentDatasetId=65c69327-85b3-466e-ac30-2cb506b76cdd
 
 @subjectAreaId=70ca9c93-0198-4b09-ab6e-660105b06b59
@@ -22,14 +22,14 @@
 @institutionId2 = 9664a7c9-e337-48d6-a55e-547c285f4ea7
 
 ### 获取特定数据集的时间轴视图（匿名用户）
-GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
+GET http://localhost:8080/api/datasets/{{parentDatasetId}}/timeline
 
 ### 获取特定数据集的时间轴视图（认证用户）
 GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
 Authorization: Bearer {{datasetUploaderToken}}
 
 ### 获取特定数据集的时间轴视图（机构内用户）
-GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
+GET http://localhost:8080/api/datasets/{{parentDatasetId}}/timeline
 Authorization: Bearer {{personToken}}
 
 ### 获取所有公开数据集
@@ -41,7 +41,7 @@ GET http://localhost:8080/api/datasets/timeline
 Authorization: Bearer {{datasetUploaderToken}}
 
 ### 根据ID获取特定公开数据集
-GET http://localhost:8080/api/datasets/{{datasetId}}
+GET http://localhost:8080/api/datasets/{{parentDatasetId}}
 
 ### 平台管理员获取所有数据集
 GET http://localhost:8080/api/manage/datasets
@@ -61,7 +61,7 @@ Authorization: Bearer {{platformAdminToken}}
 
 ### 机构管理员根据ID获取特定数据集
 GET http://localhost:8080/api/manage/datasets/{{datasetId}}
-Authorization: Bearer {{institutionSupervisorToken}}
+Authorization: Bearer {{personToken}}
 
 ### 平台管理员创建新数据集（允许所有人申请）
 POST http://localhost:8080/api/manage/datasets
@@ -192,8 +192,8 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "variableCount": 50,
   "keywords": ["医学", "研究", "数据"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
-  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
+  "fileRecordId": "dbedb266-0ad0-4cf9-90b2-52c6cc6da55c",
+  "dataDictRecordId": "853015cf-a4f4-47a9-8a94-b2db6f312b35",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -203,7 +203,7 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "contactInfo": "lisi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
+  "termsAgreementRecordId": "0c4cb5a3-06cf-4769-84d5-77d4813898a3",
   "samplingMethod": "随机抽样",
   "versionNumber": "1.0",
   "firstPublishedDate": "2023-06-01T00:00:00Z",
@@ -223,16 +223,16 @@ Authorization: Bearer {{datasetUploaderToken}}
   "description": "这是另2个示例数据集",
   "type": "COHORT",
   "category": "医学研究",
-  "providerId": "7c34890d-e50b-44e1-991a-fbad1842fd25",
-  "supervisorId": "c4d9798f-4701-4ea1-b49d-218b84235432",
+  "providerId": null,
+  "supervisorId": null,
   "startDate": "2023-01-01T00:00:00Z",
   "endDate": "2023-12-31T00:00:00Z",
   "recordCount": 2000,
   "variableCount": 100,
   "keywords": ["医学", "研究", "数据"],
   "subjectAreaId": "{{researchSubjectId}}",
-  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
-  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
+  "fileRecordId": "39504013-7fbb-4485-afc7-acaddc5c5724",
+  "dataDictRecordId": "cfdd8a46-b001-4d47-9b3f-9aeb81ac6339",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -242,7 +242,7 @@ Authorization: Bearer {{datasetUploaderToken}}
   "contactInfo": "sunqi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
+  "termsAgreementRecordId": "9c8260ac-5b77-4364-9c7f-13ce9918c1e5",
   "samplingMethod": "分层抽样",
   "versionNumber": "1.0",
   "firstPublishedDate": "2023-07-01T00:00:00Z",
@@ -348,8 +348,8 @@ Authorization: Bearer {{datasetUploaderToken}}
   "variableCount": 125,
   "keywords": ["医学", "研究", "数据", "更新"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileRecordId": "0e8f02c9-c276-495e-8245-dbf8eb4a5043",
-  "dataDictRecordId": "1f9g13d0-d387-506f-9356-ecg9fc5b6154",
+  "fileRecordId": "3b7e80b4-734e-40f5-b741-ee651d7e4e1c",
+  "dataDictRecordId": "2b999917-b934-4274-a090-7b634dde02da",
   "approved": true,
   "published": true,
   "shareAllData": true,
@@ -359,7 +359,7 @@ Authorization: Bearer {{datasetUploaderToken}}
   "contactInfo": "sunqi@example.com",
   "demographicFields": "{}",
   "outcomeFields": "{}",
-  "termsAgreementRecordId": "2g0h24e1-e498-617g-0467-fdh0gd6c7265",
+  "termsAgreementRecordId": "d4923f3e-75c3-401a-86c5-94a90d415483",
   "samplingMethod": "分层抽样",
   "versionNumber": "2.0",
   "firstPublishedDate": "2023-07-01T00:00:00Z",
@@ -381,40 +381,56 @@ Authorization: Bearer {{institutionSupervisorToken}}
 DELETE http://localhost:8080/api/manage/datasets/{{datasetId}}
 Authorization: Bearer {{datasetUploaderToken}}
 
-### 平台管理员审核通过数据集
-PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/approval
+### 平台管理员更新数据集基本信息
+PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/basic-info
 Content-Type: application/json
 Authorization: Bearer {{platformAdminToken}}
 
 {
-  "approved": true
+  "description": "这是一个更新后的示例数据集",
+  "keywords": ["医学", "研究", "数据", "更新"],
+  "published": true,
+  "shareAllData": true,
+  "contactPerson": "李四",
+  "contactInfo": "lisi@example.com",
+  "demographicFields": "{}",
+  "outcomeFields": "{}",
+  "samplingMethod": "随机抽样",
+  "applicationInstitutionIds": ["{{institutionId1}}"]
 }
 
-### 平台管理员审核驳回数据集
-PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/approval
-Content-Type: application/json
-Authorization: Bearer {{platformAdminToken}}
-
-{
-  "approved": false,
-  "rejectionReason": "数据格式不符合要求"
-}
-
-### 机构管理员审核通过数据集
-PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/approval
-Content-Type: application/json
-Authorization: Bearer {{institutionSupervisorToken}}
-
-{
-  "approved": true
-}
-
-### 机构管理员审核驳回数据集
-PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/approval
+### 机构管理员更新数据集基本信息
+PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/basic-info
 Content-Type: application/json
 Authorization: Bearer {{institutionSupervisorToken}}
 
 {
-  "approved": false,
-  "rejectionReason": "缺少必要的元数据信息"
+  "description": "由机构管理员更新的数据集",
+  "keywords": ["医学", "研究", "数据", "更新"],
+  "published": true,
+  "shareAllData": true,
+  "contactPerson": "李四",
+  "contactInfo": "lisi@example.com",
+  "demographicFields": "{}",
+  "outcomeFields": "{}",
+  "samplingMethod": "随机抽样",
+  "applicationInstitutionIds": null
+}
+
+### 数据集上传员更新自己机构的数据集基本信息
+PUT http://localhost:8080/api/manage/datasets/{{datasetId}}/basic-info
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "description": "这是另一个更新后的示例数据集",
+  "keywords": ["医学", "研究", "数据", "更新"],
+  "published": true,
+  "shareAllData": true,
+  "contactPerson": "孙七",
+  "contactInfo": "sunqi@example.com",
+  "demographicFields": "{}",
+  "outcomeFields": "{}",
+  "samplingMethod": "分层抽样",
+  "applicationInstitutionIds": ["{{institutionId2}}"]
 }

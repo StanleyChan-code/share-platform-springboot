@@ -60,7 +60,7 @@ public class ApplicationManageController {
                     id, reviewerId, reviewRequest.getNotes(), reviewRequest.getApproved());
 
             // 转换为DTO并返回
-            ApplicationDto resultDto = applicationService.getApplicationById(application.getId());
+            ApplicationDto resultDto = applicationService.getApplicationDtoById(application.getId());
             return ResponseEntity.ok(ApiResponseDto.success(resultDto, "审核完成"));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
