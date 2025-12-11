@@ -2,17 +2,21 @@ package cn.com.nabotix.shareplatform.dataset.controller;
 
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
 import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
+import cn.com.nabotix.shareplatform.dataset.service.ApplicationService;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetService;
 import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetVersionService;
+import cn.com.nabotix.shareplatform.filemanagement.dto.FileDownloadDto;
+import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
 import cn.com.nabotix.shareplatform.security.AuthorityUtil;
 import cn.com.nabotix.shareplatform.user.entity.User;
-import cn.com.nabotix.shareplatform.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,11 +36,16 @@ public class DatasetController {
 
     private final DatasetService datasetService;
     private final DatasetVersionService datasetVersionService;
+    private final FileManagementService fileManagementService;
+    private final ApplicationService applicationService;
 
     @Autowired
-    public DatasetController(DatasetService datasetService, DatasetVersionService datasetVersionService) {
+    public DatasetController(DatasetService datasetService, DatasetVersionService datasetVersionService,
+                             FileManagementService fileManagementService, ApplicationService applicationService) {
         this.datasetService = datasetService;
         this.datasetVersionService = datasetVersionService;
+        this.fileManagementService = fileManagementService;
+        this.applicationService = applicationService;
     }
 
     /**
@@ -158,5 +167,124 @@ public class DatasetController {
 
         List<DatasetVersion> versions = datasetVersionService.getDatasetVersionsByDatasetId(id);
         return ResponseEntity.ok(ApiResponseDto.success(versions, "获取数据集版本信息成功"));
+    }
+
+    /**
+     * 下载数据集版本的数据字典文件
+     * 需要用户登录才能下载
+     */
+    @GetMapping("/{datasetId}/versions/{versionId}/data-dictionary")
+    public ResponseEntity<Resource> downloadDataDictionary(
+            @PathVariable UUID datasetId,
+            @PathVariable UUID versionId) {
+        // 检查用户是否登录
+        User currentUser = AuthorityUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 检查数据集版本是否存在
+        DatasetVersion datasetVersion = datasetVersionService.getById(versionId);
+        if (datasetVersion == null || !datasetVersion.getDatasetId().equals(datasetId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 检查数据字典文件是否存在
+        if (datasetVersion.getDataDictRecordId() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            // 获取文件资源
+            FileDownloadDto fileDownloadDto = fileManagementService.downloadFile(datasetVersion.getDataDictRecordId());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fileDownloadDto.getFileName() + "\"")
+                    .body(fileDownloadDto.getFile());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 下载数据集版本的使用协议文件
+     * 需要用户登录才能下载
+     */
+    @GetMapping("/{datasetId}/versions/{versionId}/terms-agreement")
+    public ResponseEntity<Resource> downloadTermsAgreement(
+            @PathVariable UUID datasetId,
+            @PathVariable UUID versionId) {
+        // 检查用户是否登录
+        User currentUser = AuthorityUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 检查数据集版本是否存在
+        DatasetVersion datasetVersion = datasetVersionService.getById(versionId);
+        if (datasetVersion == null || !datasetVersion.getDatasetId().equals(datasetId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 检查条款协议文件是否存在
+        if (datasetVersion.getTermsAgreementRecordId() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            // 获取文件资源
+            FileDownloadDto fileDownloadDto = fileManagementService.downloadFile(datasetVersion.getTermsAgreementRecordId());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fileDownloadDto.getFileName() + "\"")
+                    .body(fileDownloadDto.getFile());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 下载数据集版本的数据分享文件
+     * 需要用户登录并且有相应的申请审批通过记录，或者自己是提供者
+     */
+    @GetMapping("/{datasetId}/versions/{versionId}/data-sharing")
+    public ResponseEntity<Resource> downloadDataSharing(
+            @PathVariable UUID datasetId,
+            @PathVariable UUID versionId) {
+        // 检查用户是否登录
+        User currentUser = AuthorityUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 检查数据集版本是否存在
+        DatasetVersion datasetVersion = datasetVersionService.getById(versionId);
+        if (datasetVersion == null || !datasetVersion.getDatasetId().equals(datasetId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 如果检查数据集不是自己就要检查是否有申请
+        if (!datasetService.getDatasetById(datasetId).getProviderId().equals(currentUser.getId())) {
+            // 检查用户是否有对该数据集版本的访问权限（需要有审批通过的申请记录）
+            if (!applicationService.checkUserAccessToDatasetVersion(versionId, currentUser.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+        }
+
+        // 检查数据分享文件是否存在
+        if (datasetVersion.getDataSharingRecordId() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            // 获取文件资源
+            FileDownloadDto fileDownloadDto = fileManagementService.downloadFile(datasetVersion.getDataSharingRecordId());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fileDownloadDto.getFileName() + "\"")
+                    .body(fileDownloadDto.getFile());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

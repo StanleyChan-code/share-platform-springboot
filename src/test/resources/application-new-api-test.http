@@ -1,5 +1,5 @@
-@applicationId=3f0b4db8-1896-4604-ae7d-82e989a909cb
-@datasetVersionId=acdb8689-9ed8-41f6-83c7-90a06d4e5ed5
+@applicationId=1771533d-4de2-404f-93df-546730f1cbc5
+@datasetVersionId=9e4a7f84-1035-40c0-9f84-e23432e217a7
 
 # 用户令牌（普通数据集用户）
 @datasetUserToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
@@ -30,7 +30,7 @@ Authorization: Bearer {{datasetUserToken}}
   "fundingSource": "国家自然科学基金",
   "purpose": "用于分析心血管疾病与生活习惯的关系",
   "projectLeader": "张三",
-  "approvalDocumentId": "e621aab7-7660-42c9-807d-1435861d6e42"
+  "approvalDocumentId": "7f23ebb9-f2be-4e27-b8be-1244cb4c7770"
 }
 
 ### 数据集提供者审核申请（通过）
@@ -56,7 +56,7 @@ Authorization: Bearer {{datasetUploaderToken}}
 ### 申请审核员审核申请（通过）
 PUT http://localhost:8080/api/manage/applications/{{applicationId}}/approver-review
 Content-Type: application/json
-Authorization: Bearer {{platformAdminToken}}
+Authorization: Bearer {{institutionSupervisorToken}}
 
 {
   "notes": "项目符合伦理审查要求，同意申请。",

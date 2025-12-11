@@ -4,6 +4,7 @@ import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
 import cn.com.nabotix.shareplatform.common.service.AuditLogService;
 import cn.com.nabotix.shareplatform.dataset.dto.DatasetApprovalRequestDto;
 import cn.com.nabotix.shareplatform.dataset.dto.DatasetCreateRequestDto;
+import cn.com.nabotix.shareplatform.dataset.dto.DatasetVersionDto;
 import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
@@ -59,19 +60,19 @@ public class DatasetManageController {
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<List<PublicDatasetDto>>> getAllDatasets() {
         List<Dataset> datasets = new ArrayList<>();
-        AuthorityUtil.checkBuilder().whenHasAuthority(UserAuthority.PLATFORM_ADMIN, () -> {
+        AuthorityUtil.checkBuilder().whenHasAuthority(() -> {
             // 平台管理员可以看到所有数据集
             datasets.addAll(datasetService.getAllDatasets());
-        }).whenHasAuthority(UserAuthority.INSTITUTION_SUPERVISOR, () -> {
+        }, UserAuthority.PLATFORM_ADMIN).whenHasAuthority(() -> {
             // 机构管理员可以看到本机构所有数据集
             UUID institutionId = getCurrentUserInstitutionId();
             if (institutionId != null) {
                 datasets.addAll(datasetService.getDatasetsByInstitutionId(institutionId));
             }
-        }).whenHasAuthority(UserAuthority.DATASET_UPLOADER, () -> {
+        }, UserAuthority.INSTITUTION_SUPERVISOR).whenHasAuthority(() -> {
             // 数据集上传员只能看到自己上传的数据集
-            datasets.addAll(datasetService.getDatasetsByProviderId(getCurrentUserId()));
-        }).execute();
+            datasets.addAll(datasetService.getDatasetsByProviderId(AuthorityUtil.getCurrentUserId()));
+        }, UserAuthority.DATASET_UPLOADER).execute();
 
         // 转换为 DTO 并包含版本信息
         List<PublicDatasetDto> dtos = datasets.stream()
@@ -144,7 +145,7 @@ public class DatasetManageController {
         dataset.setCurrentVersionDate(now);
 
         // 设置创建者和所属机构
-        dataset.setProviderId(getCurrentUserId());
+        dataset.setProviderId(AuthorityUtil.getCurrentUserId());
         dataset.setInstitutionId(getCurrentUserInstitutionId());
 
         // 创建最初数据集版本记录
@@ -164,6 +165,7 @@ public class DatasetManageController {
         firstVersion.setFileRecordId(datasetDto.getFileRecordId());
         firstVersion.setDataDictRecordId(datasetDto.getDataDictRecordId());
         firstVersion.setTermsAgreementRecordId(datasetDto.getTermsAgreementRecordId());
+        firstVersion.setDataSharingRecordId(datasetDto.getDataSharingRecordId());
         firstVersion.setApproved(null);
         firstVersion.setSupervisorId(null);
         firstVersion.setPublishedDate(null);
@@ -213,7 +215,7 @@ public class DatasetManageController {
      */
     @PostMapping("/{id}/versions")
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
-    public ResponseEntity<ApiResponseDto<PublicDatasetDto.DatasetVersionDto>> addDatasetVersion(@PathVariable UUID id, @RequestBody DatasetCreateRequestDto datasetDto) {
+    public ResponseEntity<ApiResponseDto<DatasetVersionDto>> addDatasetVersion(@PathVariable UUID id, @RequestBody DatasetCreateRequestDto datasetDto) {
         Dataset dataset = datasetService.getDatasetById(id);
 
         if (dataset == null) {
@@ -235,6 +237,7 @@ public class DatasetManageController {
         newVersion.setFileRecordId(datasetDto.getFileRecordId());
         newVersion.setDataDictRecordId(datasetDto.getDataDictRecordId());
         newVersion.setTermsAgreementRecordId(datasetDto.getTermsAgreementRecordId());
+        newVersion.setDataSharingRecordId(datasetDto.getDataSharingRecordId());
         newVersion.setCreatedAt(Instant.now());
 
         // 设置新版本为待审核状态
@@ -243,7 +246,7 @@ public class DatasetManageController {
 
         // 保存新版本
         DatasetVersion savedVersion = datasetVersionService.save(newVersion);
-        PublicDatasetDto.DatasetVersionDto datasetVersionDto = datasetVersionService.convertToDto(savedVersion);
+        DatasetVersionDto datasetVersionDto = datasetVersionService.convertToDto(savedVersion);
 
         return ResponseEntity.ok(ApiResponseDto.success(datasetVersionDto, "添加数据集新版本成功"));
     }
@@ -254,7 +257,7 @@ public class DatasetManageController {
      */
     @PutMapping("/{id}/{datasetVersionId}/approval")
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_APPROVER')")
-    public ResponseEntity<ApiResponseDto<PublicDatasetDto.DatasetVersionDto>> updateDatasetApprovalStatus(
+    public ResponseEntity<ApiResponseDto<DatasetVersionDto>> updateDatasetApprovalStatus(
             @PathVariable UUID id,
             @PathVariable UUID datasetVersionId,
             @RequestBody DatasetApprovalRequestDto approvalRequest,
@@ -289,7 +292,7 @@ public class DatasetManageController {
         // 更新审核状态
         DatasetVersion updatedDatasetVersion = datasetVersionService.updateDatasetApprovalStatus(
                 datasetVersion.getId(),
-                getCurrentUserId(),
+                AuthorityUtil.getCurrentUserId(),
                 approvalRequest.getApproved(),
                 approvalRequest.getRejectionReason());
 
@@ -320,7 +323,7 @@ public class DatasetManageController {
         }
 
         // 获取版本信息
-        PublicDatasetDto.DatasetVersionDto datasetVersionDto = datasetVersionService.convertToDto(updatedDatasetVersion);
+        DatasetVersionDto datasetVersionDto = datasetVersionService.convertToDto(updatedDatasetVersion);
 
         String message = approvalRequest.getApproved() == null ?
                 "数据集审核状态重置" :
@@ -366,16 +369,5 @@ public class DatasetManageController {
         // 获取用户信息及机构ID
         var user = userService.getUserByUserId(userDetails.getId());
         return user != null ? user.getInstitutionId() : null;
-    }
-
-    /**
-     * 获取当前认证用户的ID
-     *
-     * @return 用户ID
-     */
-    private UUID getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getId();
     }
 }

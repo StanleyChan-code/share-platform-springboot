@@ -48,12 +48,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/send-verification-code").permitAll()
-//                        .requestMatchers("/api/**").permitAll()
-//                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/**/*.css", "/**/*.js").permitAll()
-//                        .anyRequest().authenticated()
-//                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/manage/**").authenticated()
+                        .anyRequest().permitAll()
+                )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable);
         

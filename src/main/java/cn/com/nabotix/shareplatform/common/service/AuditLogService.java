@@ -2,7 +2,6 @@ package cn.com.nabotix.shareplatform.common.service;
 
 import cn.com.nabotix.shareplatform.common.entry.AuditLog;
 import cn.com.nabotix.shareplatform.common.repository.AuditLogRepository;
-import com.alibaba.fastjson2.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,8 @@ import java.util.UUID;
 /**
  * 审计日志服务类
  * 提供通用的审计日志记录功能
+ *
+ * @author 陈雍文
  */
 @Slf4j
 @Service
@@ -40,14 +41,13 @@ public class AuditLogService {
             auditLog.setId(UUID.randomUUID());
 
             // 构造payload
-            new Thread();
             Map<String, Object> payloadMap = Map.of(
                     "action", action,
                     "resourceId", resourceId,
                     "details", details
             );
             
-            auditLog.setPayload(JSON.toJSONString(payloadMap));
+            auditLog.setPayload(payloadMap);
             auditLog.setInstanceId(UUID.randomUUID());
             auditLog.setCreatedAt(Instant.now());
             auditLog.setIpAddress(ipAddress);
@@ -82,7 +82,7 @@ public class AuditLogService {
                     "resourceTitle", resourceTitle,
                     "additionalParams", additionalParams != null ? additionalParams : Map.of()
             );
-            auditLog.setPayload(JSON.toJSONString(payloadMap));
+            auditLog.setPayload(payloadMap);
             auditLog.setInstanceId(resourceId);
 
             auditLogRepository.save(auditLog);

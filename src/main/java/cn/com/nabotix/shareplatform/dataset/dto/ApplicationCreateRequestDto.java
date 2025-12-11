@@ -7,6 +7,8 @@ import java.util.UUID;
 
 /**
  * 数据集申请创建请求DTO
+ *
+ * @author 陈雍文
  */
 @Data
 public class ApplicationCreateRequestDto {

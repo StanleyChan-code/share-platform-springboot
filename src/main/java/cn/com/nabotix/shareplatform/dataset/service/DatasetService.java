@@ -1,5 +1,6 @@
 package cn.com.nabotix.shareplatform.dataset.service;
 
+import cn.com.nabotix.shareplatform.dataset.dto.DatasetVersionDto;
 import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.repository.DatasetRepository;
@@ -24,6 +25,8 @@ import java.util.stream.Collectors;
 /**
  * 数据集服务类
  * 提供数据集的增删改查、审批、发布等相关业务逻辑
+ *
+ * @author 陈雍文
  */
 @Slf4j
 @Service
@@ -129,11 +132,11 @@ public class DatasetService {
 
         // 获取该数据集的子数据集（随访数据集）
         if (dto.getId() != null) {
-            PublicDatasetDto[] children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
+            List<PublicDatasetDto> children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
                     .filter(child -> checkPublicDatasetAssessPermission(child, userInstitutionId))
                     .sorted(Comparator.comparing(Dataset::getStartDate))
                     .map(this::convertToPublicDto)
-                    .toArray(PublicDatasetDto[]::new);
+                    .toList();
 
             dto.setFollowUpDatasets(children);
         }
@@ -154,11 +157,11 @@ public class DatasetService {
                 userRepository.findById(dataset.getProviderId()).orElse(null) : null;
 
         // 获取版本信息
-        PublicDatasetDto.DatasetVersionDto[] versionsDtos = dataset.getId() == null ?
+        List<DatasetVersionDto> versionsDtos = dataset.getId() == null ?
                 null :
                 datasetVersionService.findAllVersionsByDatasetId(dataset.getId()).stream()
                         .map(datasetVersionService::convertToDto)
-                        .toArray(PublicDatasetDto.DatasetVersionDto[]::new);
+                        .toList();
 
         return PublicDatasetDto.fromEntity(dataset, subjectArea, provider, versionsDtos);
     }
@@ -192,8 +195,8 @@ public class DatasetService {
 
         // 查阅数据集时，数据集所属机构与用户所属机构没有关系，同一机构也不代表用户能够查看数据集
         // 如果不是公开访问，则判断用户当前机构id是否在允许申请的机构列表中
-        UUID[] applicationInstitutionIds = dataset.getApplicationInstitutionIds();
-        return applicationInstitutionIds != null && Arrays.asList(applicationInstitutionIds).contains(userInstitutionId);
+        List<UUID> applicationInstitutionIds = dataset.getApplicationInstitutionIds();
+        return applicationInstitutionIds != null && applicationInstitutionIds.contains(userInstitutionId);
     }
 
 
@@ -208,6 +211,9 @@ public class DatasetService {
      * 根据ID获取数据集
      */
     public Dataset getDatasetById(UUID id) {
+        if (id == null) {
+            return null;
+        }
         return datasetRepository.findById(id).orElse(null);
     }
 
@@ -286,16 +292,5 @@ public class DatasetService {
             return datasetRepository.save(dataset);
         }
         return null;
-    }
-
-    /**
-     * 删除数据集
-     */
-    public boolean deleteDataset(UUID id) {
-        if (datasetRepository.existsById(id)) {
-            datasetRepository.deleteById(id);
-            return true;
-        }
-        return false;
     }
 }

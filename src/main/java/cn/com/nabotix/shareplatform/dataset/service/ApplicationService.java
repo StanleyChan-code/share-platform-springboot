@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 
 /**
  * 数据集申请服务类
+ *
+ * @author 陈雍文
  */
 @Slf4j
 @Service
@@ -124,7 +126,7 @@ public class ApplicationService {
         }
 
         // []表示不允许任何人申请
-        if (dataset.getApplicationInstitutionIds().length == 0) {
+        if (dataset.getApplicationInstitutionIds().isEmpty()) {
             return false;
         }
 
@@ -340,5 +342,18 @@ public class ApplicationService {
                 log.error("Failed to move approval document file: {}", e.getMessage());
             }
         }
+    }
+    
+    /**
+     * 检查用户是否对指定数据集版本有访问权限（即有审批通过的申请记录）
+     * 
+     * @param datasetVersionId 数据集版本ID
+     * @param userId 用户ID
+     * @return 是否有访问权限
+     */
+    public boolean checkUserAccessToDatasetVersion(UUID datasetVersionId, UUID userId) {
+        // 查找用户对该数据集版本的申请记录，状态为已批准
+        return applicationRepository.existsByDatasetVersionIdAndApplicantIdAndStatus(
+                datasetVersionId, userId, ApplicationStatus.APPROVED);
     }
 }

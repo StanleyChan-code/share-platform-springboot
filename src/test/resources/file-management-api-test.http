@@ -23,7 +23,7 @@ Authorization: Bearer {{datasetUploaderToken}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Disposition: form-data; name="file"; filename="CCCCCCC.txt"
 Content-Type: text/plain
 
 这是一个测试文件内容。

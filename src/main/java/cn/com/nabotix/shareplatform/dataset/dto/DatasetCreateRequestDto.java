@@ -4,6 +4,8 @@ import cn.com.nabotix.shareplatform.dataset.entity.DatasetType;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -72,7 +74,7 @@ public class DatasetCreateRequestDto {
     /**
      * 关键词数组
      */
-    private String[] keywords;
+    private List<String> keywords;
 
     /**
      * 学科领域ID(关联学科领域表)
@@ -112,12 +114,12 @@ public class DatasetCreateRequestDto {
     /**
      * 人口统计学字段信息(JSON格式存储)
      */
-    private String demographicFields;
+    private Map<String, Object> demographicFields;
 
     /**
      * 结果字段信息(JSON格式存储)
      */
-    private String outcomeFields;
+    private Map<String, Object> outcomeFields;
 
     /**
      * 父数据集ID(用于随访关联基线数据集)
@@ -135,7 +137,7 @@ public class DatasetCreateRequestDto {
      * []表示不允许任何人申请
      * [UUID1, UUID2, ...]表示只允许这些机构的人申请
      */
-    private UUID[] applicationInstitutionIds;
+    private List<UUID> applicationInstitutionIds;
 
     /**
      * 版本号
@@ -162,4 +164,8 @@ public class DatasetCreateRequestDto {
      */
     private String versionDescription;
 
+    /**
+     * 数据分享文件记录ID
+     */
+    private UUID dataSharingRecordId;
 }

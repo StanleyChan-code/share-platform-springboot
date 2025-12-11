@@ -2,8 +2,11 @@ package cn.com.nabotix.shareplatform.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -36,13 +39,16 @@ public class AnalysisResult {
     private String correlations;
 
     @Column(name = "field_mappings", columnDefinition = "jsonb")
-    private String fieldMappings;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> fieldMappings;
 
     @Column(name = "unit_conversions", columnDefinition = "jsonb")
-    private String unitConversions;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> unitConversions;
 
     @Column(name = "analysis_metadata", columnDefinition = "jsonb")
-    private String analysisMetadata;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> analysisMetadata;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

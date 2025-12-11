@@ -11,6 +11,12 @@ import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
+/**
+ * 应用仓库接口
+ * 提供对Application实体的数据库操作方法，包括基本的CRUD操作和自定义查询
+ * 
+ * @author 陈雍文
+ */
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
     
@@ -46,4 +52,15 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
             @Param("institutionId") UUID institutionId,
             @Param("status") ApplicationStatus status,
             Pageable pageable);
+            
+    /**
+     * 检查用户对指定数据集版本是否有审批通过的申请记录
+     * 
+     * @param datasetVersionId 数据集版本ID
+     * @param applicantId 申请人ID
+     * @param status 申请状态
+     * @return 是否存在符合条件的申请记录
+     */
+    boolean existsByDatasetVersionIdAndApplicantIdAndStatus(
+            UUID datasetVersionId, UUID applicantId, ApplicationStatus status);
 }

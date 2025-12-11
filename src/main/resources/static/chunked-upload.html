@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大文件分片上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .upload-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"], input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-pause {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-pause:hover {
+            background-color: #e0a800;
+        }
+        .btn-resume {
+            background-color: #28a745;
+        }
+        .btn-resume:hover {
+            background-color: #218838;
+        }
+        .progress-container {
+            margin-top: 10px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .chunk-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .token-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .token-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>大文件分片上传测试页面</h1>
+    
+    <div class="token-section">
+        <h2>认证信息</h2>
+        <div class="form-group">
+            <label for="authToken">JWT Token:</label>
+            <input type="text" id="authToken" class="token-input" placeholder="请输入有效的JWT Token">
+        </div>
+    </div>
+    
+    <div class="upload-section">
+        <h2>文件选择与配置</h2>
+        <div class="form-group">
+            <label for="fileInput">选择文件:</label>
+            <input type="file" id="fileInput" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="chunkSize">分片大小 (MB):</label>
+            <input type="number" id="chunkSize" min="1" max="10" value="2" required>
+        </div>
+        
+        <button id="initUploadBtn">1. 初始化上传</button>
+        <button id="uploadChunksBtn" disabled>2. 上传分片</button>
+        <button id="pauseUploadBtn" class="btn-pause" disabled>暂停上传</button>
+        <button id="resumeUploadBtn" class="btn-resume" disabled>恢复上传</button>
+        <button id="mergeChunksBtn" disabled>3. 合并分片</button>
+    </div>
+    
+    <div class="upload-section">
+        <h2>上传状态</h2>
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+        
+        <div class="progress-container">
+            <label>上传进度:</label>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="progressText">0%</div>
+        </div>
+        
+        <div class="form-group">
+            <label>已上传分片:</label>
+            <div id="uploadedChunks" class="chunk-list"></div>
+        </div>
+        
+        <div class="form-group">
+            <label>待上传分片:</label>
+            <div id="pendingChunks" class="chunk-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let uploadId = null;
+        let file = null;
+        let chunkSize = 2 * 1024 * 1024; // 默认2MB
+        let totalChunks = 0;
+        let uploadedChunks = [];
+        let pendingChunks = [];
+        let isUploading = false;
+        let isPaused = false;
+        
+        // DOM元素
+        const fileInput = document.getElementById('fileInput');
+        const authTokenInput = document.getElementById('authToken');
+        const chunkSizeInput = document.getElementById('chunkSize');
+        const initUploadBtn = document.getElementById('initUploadBtn');
+        const uploadChunksBtn = document.getElementById('uploadChunksBtn');
+        const pauseUploadBtn = document.getElementById('pauseUploadBtn');
+        const resumeUploadBtn = document.getElementById('resumeUploadBtn');
+        const mergeChunksBtn = document.getElementById('mergeChunksBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const uploadedChunksDiv = document.getElementById('uploadedChunks');
+        const pendingChunksDiv = document.getElementById('pendingChunks');
+        
+        // 事件监听器
+        initUploadBtn.addEventListener('click', initUpload);
+        uploadChunksBtn.addEventListener('click', startUploadChunks);
+        pauseUploadBtn.addEventListener('click', pauseUpload);
+        resumeUploadBtn.addEventListener('click', resumeUpload);
+        mergeChunksBtn.addEventListener('click', mergeChunks);
+        
+        // 初始化上传
+        async function initUpload() {
+            file = fileInput.files[0];
+            if (!file) {
+                showStatus('请选择文件', 'error');
+                return;
+            }
+            
+            const authToken = authTokenInput.value;
+            if (!authToken) {
+                showStatus('请输入JWT Token', 'error');
+                return;
+            }
+            
+            chunkSize = chunkSizeInput.value * 1024 * 1024;
+            totalChunks = Math.ceil(file.size / chunkSize);
+            
+            const initData = {
+                fileName: file.name,
+                fileSize: file.size,
+                totalChunks: totalChunks
+            };
+            
+            try {
+                showStatus('正在初始化上传...', 'info');
+                
+                const response = await fetch('/api/files/chunked-upload/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify(initData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                uploadId = result.uploadId;
+                
+                showStatus(`上传初始化成功，Upload ID: ${uploadId}`, 'success');
+                uploadChunksBtn.disabled = false;
+                
+                // 获取已上传的分片信息
+                await getUploadStatus();
+            } catch (error) {
+                console.error('初始化上传失败:', error);
+                showStatus(`初始化上传失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 获取上传状态
+        async function getUploadStatus() {
+            if (!uploadId) return;
+            
+            const authToken = authTokenInput.value;
+            if (!authToken) {
+                showStatus('请输入JWT Token', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/files/chunked-upload/status?uploadId=${uploadId}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const status = await response.json();
+                uploadedChunks = status.uploadedChunks || [];
+                
+                // 更新待上传分片列表
+                pendingChunks = [];
+                for (let i = 0; i < totalChunks; i++) {
+                    if (!uploadedChunks.includes(i)) {
+                        pendingChunks.push(i);
+                    }
+                }
+                
+                // 更新UI
+                updateProgress();
+                updateChunksDisplay();
+                
+                // 检查是否所有分片都已上传
+                if (uploadedChunks.length === totalChunks && totalChunks > 0) {
+                    mergeChunksBtn.disabled = false;
+                    showStatus('所有分片已上传，可以合并', 'success');
+                }
+            } catch (error) {
+                console.error('获取上传状态失败:', error);
+                showStatus(`获取上传状态失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 开始上传分片
+        async function startUploadChunks() {
+            if (!uploadId || !file) {
+                showStatus('请先初始化上传', 'error');
+                return;
+            }
+            
+            const authToken = authTokenInput.value;
+            if (!authToken) {
+                showStatus('请输入JWT Token', 'error');
+                return;
+            }
+            
+            isUploading = true;
+            isPaused = false;
+            uploadChunksBtn.disabled = true;
+            pauseUploadBtn.disabled = false;
+            resumeUploadBtn.disabled = true;
+            
+            await uploadChunks();
+        }
+        
+        // 暂停上传
+        function pauseUpload() {
+            isPaused = true;
+            pauseUploadBtn.disabled = true;
+            resumeUploadBtn.disabled = false;
+            showStatus('上传已暂停', 'info');
+        }
+        
+        // 恢复上传
+        function resumeUpload() {
+            isPaused = false;
+            pauseUploadBtn.disabled = false;
+            resumeUploadBtn.disabled = true;
+            showStatus('继续上传...', 'info');
+            uploadChunks();
+        }
+        
+        // 上传分片
+        async function uploadChunks() {
+            if (!uploadId || !file || !isUploading) {
+                return;
+            }
+            
+            const authToken = authTokenInput.value;
+            if (!authToken) {
+                showStatus('请输入JWT Token', 'error');
+                return;
+            }
+            
+            try {
+                // 创建一个当前待上传分片的副本，避免在上传过程中数组变化导致的问题
+                const chunksToUpload = [...pendingChunks];
+                
+                for (let i = 0; i < chunksToUpload.length; i++) {
+                    // 检查是否暂停
+                    while (isPaused) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    const chunkIndex = chunksToUpload[i];
+                    const start = chunkIndex * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+                    
+                    const formData = new FormData();
+                    formData.append('file', chunk);
+                    formData.append('uploadId', uploadId);
+                    formData.append('chunkNumber', chunkIndex);
+                    formData.append('totalChunks', totalChunks);
+                    formData.append('fileName', file.name);
+                    formData.append('fileSize', file.size);
+                    
+                    showStatus(`正在上传分片 ${chunkIndex + 1}/${totalChunks}...`, 'info');
+                    
+                    const response = await fetch('/api/files/chunked-upload/chunk', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + authToken
+                        },
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`上传分片 ${chunkIndex + 1} 失败: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    if (!result.uploaded) {
+                        throw new Error(`上传分片 ${chunkIndex + 1} 失败: ${result.message}`);
+                    }
+                    
+                    // 更新已上传分片列表
+                    if (!uploadedChunks.includes(chunkIndex)) {
+                        uploadedChunks.push(chunkIndex);
+                        // 从待上传列表中移除
+                        const pendingIndex = pendingChunks.indexOf(chunkIndex);
+                        if (pendingIndex > -1) {
+                            pendingChunks.splice(pendingIndex, 1);
+                        }
+                    }
+                    
+                    updateProgress();
+                    updateChunksDisplay();
+                }
+                
+                isUploading = false;
+                pauseUploadBtn.disabled = true;
+                showStatus('所有分片上传完成', 'success');
+                mergeChunksBtn.disabled = false;
+                
+                // 再次检查上传状态
+                await getUploadStatus();
+            } catch (error) {
+                isUploading = false;
+                console.error('上传分片失败:', error);
+                showStatus(`上传分片失败: ${error.message}`, 'error');
+                uploadChunksBtn.disabled = false;
+                pauseUploadBtn.disabled = true;
+                resumeUploadBtn.disabled = true;
+            }
+        }
+        
+        // 合并分片
+        async function mergeChunks() {
+            if (!uploadId) {
+                showStatus('请先初始化上传', 'error');
+                return;
+            }
+            
+            const authToken = authTokenInput.value;
+            if (!authToken) {
+                showStatus('请输入JWT Token', 'error');
+                return;
+            }
+            
+            mergeChunksBtn.disabled = true;
+            
+            try {
+                showStatus('正在合并分片...', 'info');
+                
+                const response = await fetch('/api/files/chunked-upload/merge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: new URLSearchParams({
+                        'uploadId': uploadId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                showStatus(`文件合并成功！文件ID: ${result.fileId}`, 'success');
+                uploadChunksBtn.disabled = true;
+                pauseUploadBtn.disabled = true;
+                resumeUploadBtn.disabled = true;
+            } catch (error) {
+                console.error('合并分片失败:', error);
+                showStatus(`合并分片失败: ${error.message}`, 'error');
+                mergeChunksBtn.disabled = false;
+            }
+        }
+        
+        // 更新进度显示
+        function updateProgress() {
+            if (totalChunks === 0) return;
+            
+            const progress = (uploadedChunks.length / totalChunks) * 100;
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `${Math.round(progress)}%`;
+        }
+        
+        // 更新分片显示
+        function updateChunksDisplay() {
+            // 更新已上传分片显示
+            if (uploadedChunks.length === 0) {
+                uploadedChunksDiv.textContent = '暂无已上传分片';
+            } else {
+                uploadedChunksDiv.innerHTML = '';
+                // 按顺序显示已上传分片
+                const sortedChunks = [...uploadedChunks].sort((a, b) => a - b);
+                sortedChunks.forEach(chunk => {
+                    const chunkElement = document.createElement('span');
+                    chunkElement.textContent = chunk;
+                    chunkElement.style.marginRight = '5px';
+                    chunkElement.style.backgroundColor = '#d4edda';
+                    chunkElement.style.padding = '2px 4px';
+                    chunkElement.style.borderRadius = '3px';
+                    uploadedChunksDiv.appendChild(chunkElement);
+                });
+            }
+            
+            // 更新待上传分片显示
+            if (pendingChunks.length === 0) {
+                pendingChunksDiv.textContent = '暂无待上传分片';
+            } else {
+                pendingChunksDiv.innerHTML = '';
+                // 按顺序显示待上传分片
+                const sortedPending = [...pendingChunks].sort((a, b) => a - b);
+                sortedPending.forEach(chunk => {
+                    const chunkElement = document.createElement('span');
+                    chunkElement.textContent = chunk;
+                    chunkElement.style.marginRight = '5px';
+                    chunkElement.style.backgroundColor = '#f8d7da';
+                    chunkElement.style.padding = '2px 4px';
+                    chunkElement.style.borderRadius = '3px';
+                    pendingChunksDiv.appendChild(chunkElement);
+                });
+            }
+        }
+        
+        // 显示状态消息
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message ' + type;
+            statusMessage.style.display = 'block';
+            
+            // 3秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

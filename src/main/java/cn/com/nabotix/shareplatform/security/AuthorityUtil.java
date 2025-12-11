@@ -47,6 +47,16 @@ public class AuthorityUtil {
     }
 
     /**
+     * 获取当前认证用户的ID
+     * @return 用户ID
+     */
+    public static UUID getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        return userDetails.getId();
+    }
+
+    /**
      * 创建权限检查器Builder
      *
      * @return AuthorityCheckerBuilder实例
@@ -117,22 +127,28 @@ public class AuthorityUtil {
          * 添加权限和对应操作的映射关系，当具有对应权限时执行相应的操作
          * 按添加顺序存储，检查时只执行第一个匹配的权限操作
          *
-         * @param authority 权限
          * @param action    对应的操作
+         * @param authorities 权限
          * @return Builder实例
          * @throws IllegalArgumentException 如果权限或操作为空或者权限操作已设置。
          *                                  同时使用了whenHasAuthority和withAllowedAuthorities也会导致错误
          */
-        public AuthorityCheckerBuilder whenHasAuthority(UserAuthority authority, Runnable action) {
-            if (authority == null || action == null) {
+        public AuthorityCheckerBuilder whenHasAuthority(Runnable action, UserAuthority ...authorities) {
+
+            if (authorities == null || action == null) {
                 throw new IllegalArgumentException("权限和操作不能为空");
-            } else if (allowedAuthorities.contains(authority)) {
-                throw new IllegalArgumentException("权限设置已存在");
-            } else if (orderedAuthorityActions.size() != allowedAuthorities.size()) {
-                throw new UnsupportedOperationException("权限和操作数量不匹配，这可能是同时使用了whenHasAuthority和withAllowedAuthorities导致的");
+            } else {
+                Arrays.asList(authorities).forEach(authority -> {
+                    if (allowedAuthorities.contains(authority)) {
+                        throw new IllegalArgumentException("权限设置已存在");
+                    } else if (orderedAuthorityActions.size() != allowedAuthorities.size()) {
+                        throw new UnsupportedOperationException("权限和操作数量不匹配，这可能是同时使用了whenHasAuthority和withAllowedAuthorities导致的");
+                    }
+
+                    orderedAuthorityActions.add(Map.entry(authority, action));
+                    allowedAuthorities.add(authority);
+                });
             }
-            orderedAuthorityActions.add(Map.entry(authority, action));
-            allowedAuthorities.add(authority);
             return this;
         }
 

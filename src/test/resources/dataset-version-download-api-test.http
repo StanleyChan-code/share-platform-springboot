@@ -1,0 +1,42 @@
+@datasetId=52c50e97-baa8-41ff-92c5-7ea998f216f5
+@datasetVersionId=9e4a7f84-1035-40c0-9f84-e23432e217a7
+
+@platformAdminToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
+
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，管理员
+@institutionSupervisorToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
+
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，数据集上传员7c34890d-e50b-44e1-991a-fbad1842fd25
+@datasetUploaderToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMSIsImlhdCI6MTc2NDgxOTI0MiwiZXhwIjoxNzY2NjgzMjQyfQ.Lm1gEVO0YJJwPMvyb2ejd5A-fD2cpLMIyJJfsAYpAg8oB6VCK0Dlb10o5_R3nC8u
+
+# 9664a7c9-e337-48d6-a55e-547c285f4ea7机构，普通用户
+@personToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
+
+### 下载数据字典文件（未登录，应该返回401）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/data-dictionary
+
+### 下载数据字典文件（已登录）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/data-dictionary
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 下载使用协议文件（未登录，应该返回401）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/terms-agreement
+
+### 下载使用协议文件（已登录）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/terms-agreement
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 下载数据分享文件（未登录，应该返回401）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/data-sharing
+
+### 下载数据分享文件（已登录但无申请权限，应该返回403）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/data-sharing
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 下载数据分享文件（已登录且有申请权限）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/data-sharing
+Authorization: Bearer {{personToken}}
+
+### 下载数据分享文件（已登录且数据集是自己上传的）
+GET http://localhost:8080/api/datasets/{{datasetId}}/versions/{{datasetVersionId}}/data-sharing
+Authorization: Bearer {{datasetUploaderToken}}

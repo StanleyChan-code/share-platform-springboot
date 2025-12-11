@@ -60,12 +60,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>2.0.52</version>
-        </dependency>
-        <!-- Removed hibernate-types-60 dependency as it's not compatible with our Hibernate 6 version -->
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>

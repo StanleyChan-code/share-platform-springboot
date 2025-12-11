@@ -118,6 +118,9 @@ public class UserService {
      * @return 包含用户基本信息和角色列表的用户对象
      */
     public User getUserByUserId(UUID userId) {
+        if (userId == null) {
+            return null;
+        }
         User user = userRepository.findById(userId).orElse(null);
         if (user != null){
             user.setPassword(null);
@@ -137,6 +140,16 @@ public class UserService {
             user.setPassword(null);
         }
         return user;
+    }
+
+    /**
+     * 根据机构ID获取用户列表
+     *
+     * @param institutionId 机构ID
+     * @return 用户列表
+     */
+    public List<User> getUsersByInstitutionId(UUID institutionId) {
+        return userRepository.findByInstitutionId(institutionId);
     }
 
     /**

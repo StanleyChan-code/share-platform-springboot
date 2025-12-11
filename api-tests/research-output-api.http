@@ -1,0 +1,125 @@
+# 研究成果API测试文件
+
+@researchOutputId=39cac811-6feb-46a0-bd74-f65e0a63fd15
+@datasetId=52c50e97-baa8-41ff-92c5-7ea998f216f5
+@fileId=5d869ebf-76a6-466b-8808-1246bf1225a4
+
+# 用户令牌（普通用户）
+@userToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
+
+# 平台管理员令牌
+@platformAdminToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
+
+# 机构管理员令牌
+@institutionSupervisorToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
+
+# 研究成果审核员令牌
+@researchOutputApproverToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDMwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+
+### 普通用户提交新的研究成果
+# @name createResearchOutput
+POST http://localhost:8080/api/research-outputs
+Content-Type: application/json
+#Authorization: Bearer {{userToken}}
+
+{
+  "datasetId": "{{datasetId}}",
+  "type": "PAPER",
+  "title": "测试研究成果论文",
+  "abstractText": "这是一篇测试研究成果的摘要内容",
+  "outputNumber": "RN-2025-001",
+  "citationCount": 10,
+  "publicationUrl": "https://example.com/paper/123",
+  "fileId": "{{fileId}}"
+}
+
+### 普通用户查询自己提交的研究成果列表（所有状态）
+# @name getMyResearchOutputsAll
+GET http://localhost:8080/api/research-outputs/my-submissions?status=all&page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 普通用户查询自己提交的研究成果列表（待审核）
+# @name getMyResearchOutputsPending
+GET http://localhost:8080/api/research-outputs/my-submissions?status=pending&page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 普通用户查询自己提交的研究成果列表（已处理）
+# @name getMyResearchOutputsProcessed
+GET http://localhost:8080/api/research-outputs/my-submissions?status=processed&page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 普通用户查询自己提交的研究成果列表（被拒绝）
+# @name getMyResearchOutputsDenied
+GET http://localhost:8080/api/research-outputs/my-submissions?status=denied&page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 普通用户查询自己提交的特定研究成果
+# @name getMyResearchOutputById
+GET http://localhost:8080/api/research-outputs/my-submissions/{{researchOutputId}}
+Authorization: Bearer {{userToken}}
+
+### 平台管理员获取所有研究成果列表（所有状态）
+# @name getAllResearchOutputs
+GET http://localhost:8080/api/manage/research-outputs?status=all&page=0&size=10
+Authorization: Bearer {{platformAdminToken}}
+
+### 机构管理员获取本机构研究成果列表
+GET http://localhost:8080/api/manage/research-outputs?status=all&page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 研究成果审核员获取本机构研究成果列表
+GET http://localhost:8080/api/manage/research-outputs?status=all&page=0&size=10
+Authorization: Bearer {{researchOutputApproverToken}}
+
+### 平台管理员获取特定研究成果详情
+# @name getResearchOutputById
+GET http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}
+Authorization: Bearer {{platformAdminToken}}
+
+### 机构管理员获取本机构特定研究成果详情
+GET http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}
+Authorization: Bearer {{institutionSupervisorToken}}
+
+### 研究成果审核员获取本机构特定研究成果详情
+GET http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}
+Authorization: Bearer {{researchOutputApproverToken}}
+
+### 平台管理员审核研究成果（通过）
+# @name approveResearchOutput
+PUT http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{platformAdminToken}}
+
+{
+  "approved": true
+}
+
+### 平台管理员审核研究成果（拒绝）
+# @name rejectResearchOutput
+PUT http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{platformAdminToken}}
+
+{
+  "approved": false,
+  "rejectionReason": "内容不符合要求"
+}
+
+### 机构管理员审核研究成果（通过）
+PUT http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{institutionSupervisorToken}}
+
+{
+  "approved": true
+}
+
+### 研究成果审核员审核研究成果（拒绝）
+PUT http://localhost:8080/api/manage/research-outputs/{{researchOutputId}}/approval
+Content-Type: application/json
+Authorization: Bearer {{researchOutputApproverToken}}
+
+{
+  "approved": false,
+  "rejectionReason": "内容不符合规范"
+}

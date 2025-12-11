@@ -1,6 +1,6 @@
 package cn.com.nabotix.shareplatform.dataset.service;
 
-import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
+import cn.com.nabotix.shareplatform.dataset.dto.DatasetVersionDto;
 import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
 import cn.com.nabotix.shareplatform.dataset.repository.DatasetVersionRepository;
 import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
@@ -96,7 +96,7 @@ public class DatasetVersionService {
     }
 
 
-    public PublicDatasetDto.DatasetVersionDto convertToDto(DatasetVersion version) {
+    public DatasetVersionDto convertToDto(DatasetVersion version) {
         if (version == null) {
             return null;
         }
@@ -105,7 +105,7 @@ public class DatasetVersionService {
         if (version.getSupervisorId() != null) {
             supervisor = userService.getUserByUserId(version.getSupervisorId());
         }
-        return PublicDatasetDto.DatasetVersionDto.fromEntity(version, supervisor);
+        return DatasetVersionDto.fromEntity(version, supervisor);
     }
 
     /**
@@ -156,6 +156,16 @@ public class DatasetVersionService {
             } catch (Exception e) {
                 // 记录日志，但不中断操作
                 log.error("Failed to move terms agreement file: {}", e.getMessage());
+            }
+        }
+
+        // 移动数据分享文件
+        if (datasetVersion.getDataSharingRecordId() != null) {
+            try {
+                fileManagementService.moveFileToDirectory(datasetVersion.getDataSharingRecordId(), basePath);
+            } catch (Exception e) {
+                // 记录日志，但不中断操作
+                log.error("Failed to move data sharing file: {}", e.getMessage());
             }
         }
     }

@@ -72,6 +72,12 @@ public class DatasetVersion {
     private UUID termsAgreementRecordId;
 
     /**
+     * 数据分享文件记录ID
+     */
+    @Column(name = "data_sharing_record_id")
+    private UUID dataSharingRecordId;
+
+    /**
      * 审核状态(true:通过, false:拒绝, null:未审核)
      */
     private Boolean approved;

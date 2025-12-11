@@ -3,7 +3,7 @@ package cn.com.nabotix.shareplatform.filemanagement.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -36,13 +36,13 @@ public class FileRecord {
     private UUID uploaderId;
 
     @Column(nullable = false)
-    private LocalDateTime uploadTime;
+    private Instant uploadTime;
 
     @Column(nullable = false)
     private Boolean deleted = false;
 
     @Column
-    private LocalDateTime deleteTime;
+    private Instant deleteTime;
 
     // Constructors
     public FileRecord() {}
@@ -54,7 +54,7 @@ public class FileRecord {
         this.fileSize = fileSize;
         this.fileType = fileType;
         this.uploaderId = uploaderId;
-        this.uploadTime = LocalDateTime.now();
+        this.uploadTime = Instant.now();
         this.deleted = false;
     }
 }

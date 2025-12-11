@@ -5,6 +5,8 @@ import lombok.Data;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.hibernate.type.SqlTypes;
@@ -96,7 +98,8 @@ public class Dataset {
      * 关键词数组
      */
     @Column(name = "keywords", columnDefinition = "text[]")
-    private String[] keywords;
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    private List<String> keywords;
 
     /**
      * 学科领域ID(关联学科领域表)
@@ -149,14 +152,14 @@ public class Dataset {
      */
     @Column(name = "demographic_fields", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    private String demographicFields;
+    private Map<String, Object> demographicFields;
 
     /**
      * 结果字段信息(JSON格式存储)
      */
     @Column(name = "outcome_fields", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    private String outcomeFields;
+    private Map<String, Object> outcomeFields;
 
     /**
      * 首次发布时间
@@ -201,6 +204,7 @@ public class Dataset {
      * [UUID1, UUID2, ...]表示只允许这些机构的人申请
      */
     @Column(name = "application_institution_ids", columnDefinition = "uuid[]")
-    private UUID[] applicationInstitutionIds;
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    private List<UUID> applicationInstitutionIds;
 
 }

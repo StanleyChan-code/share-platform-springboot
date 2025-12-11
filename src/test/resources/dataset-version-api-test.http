@@ -1,5 +1,5 @@
 @datasetId=52c50e97-baa8-41ff-92c5-7ea998f216f5
-@datasetVersionId=acdb8689-9ed8-41f6-83c7-90a06d4e5ed5
+@datasetVersionId=9e4a7f84-1035-40c0-9f84-e23432e217a7
 
 @subjectAreaId=70ca9c93-0198-4b09-ab6e-660105b06b59
 
@@ -21,7 +21,7 @@ Authorization: Bearer {{datasetUploaderToken}}
 ### 为现有数据集添加新版本
 POST http://localhost:8080/api/manage/datasets/{{datasetId}}/versions
 Content-Type: application/json
-Authorization: Bearer {{institutionSupervisorToken}}
+Authorization: Bearer {{datasetUploaderToken}}
 
 {
   "titleCn": "示例数据集",
@@ -34,19 +34,20 @@ Authorization: Bearer {{institutionSupervisorToken}}
   "variableCount": 50,
   "keywords": ["医学", "研究", "数据"],
   "subjectAreaId": "{{subjectAreaId}}",
-  "fileRecordId": "04d705f6-a130-4518-9700-5c583ad55f97",
-  "dataDictRecordId": "e573c3b0-61f0-40dd-befe-85abf2def6d6",
+  "fileRecordId": "5aaccb62-e798-4d6e-830b-939eb45859db",
+  "dataDictRecordId": "fb37f684-a227-454a-ac36-2901382a3141",
   "published": true,
   "shareAllData": true,
   "datasetLeader": "张三",
   "dataCollectionUnit": "某医院",
   "contactPerson": "李四",
   "contactInfo": "lisi@example.com",
-  "demographicFields": "{}",
-  "outcomeFields": "{}",
-  "termsAgreementRecordId": "90b0617d-ad42-4b1a-8e96-597e654f0907",
+  "demographicFields": {},
+  "outcomeFields": {},
+  "termsAgreementRecordId": "69199694-e427-4e65-a924-16e747f7a1db",
+  "dataSharingRecordId": "14b950ba-72e4-47fb-b6db-6182f648c770",
   "samplingMethod": "随机抽样",
-  "versionNumber": "2.0",
+  "versionNumber": "4.0",
   "versionDescription": "数据集第二版，增加了更多样本数据"
 }
 

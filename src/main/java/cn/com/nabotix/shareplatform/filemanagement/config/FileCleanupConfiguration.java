@@ -26,9 +26,9 @@ public class FileCleanupConfiguration {
     }
 
     /**
-     * 定时清理临时文件（每天凌晨4点执行）
+     * 定时清理临时文件（每天凌晨4点30分执行）
      */
-    @Scheduled(cron = "0 0 4 * * ?")
+    @Scheduled(cron = "0 30 4 * * ?")
     public void cleanUpTemporaryFiles() {
         fileManagementService.cleanUpTemporaryFiles();
     }
