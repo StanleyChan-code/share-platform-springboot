@@ -12,4 +12,5 @@ public class ResearchSubjectDto {
     private String description;
     private Boolean active = true;
     private Instant createdAt;
+    private Long searchCount;
 }

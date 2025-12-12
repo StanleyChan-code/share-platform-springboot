@@ -4,6 +4,7 @@ import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
 import cn.com.nabotix.shareplatform.researchsubject.dto.ResearchSubjectCreateRequestDto;
 import cn.com.nabotix.shareplatform.researchsubject.dto.ResearchSubjectDto;
 import cn.com.nabotix.shareplatform.researchsubject.service.ResearchSubjectService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ import java.util.UUID;
  *
  * @author 陈雍文
  */
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/manage/research-subjects")
 @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
@@ -26,12 +28,8 @@ public class ResearchSubjectManageController {
 
     private final ResearchSubjectService researchSubjectService;
 
-    public ResearchSubjectManageController(ResearchSubjectService researchSubjectService) {
-        this.researchSubjectService = researchSubjectService;
-    }
-
     /**
-     * 获取所有研究学科列表（包括激活和非激活的）
+     * 获取所有研究学科列表（包括激活和非激活的）（分页）
      * 仅平台管理员可访问
      */
     @GetMapping

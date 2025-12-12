@@ -1,0 +1,90 @@
+# 数据集统计信息API测试
+
+@baseUrl = http://localhost:8080
+
+@datasetVersionId = 9e4a7f84-1035-40c0-9f84-e23432e217a7
+@datasetStatisticId = 550e8400-e29b-41d4-a716-446655440001
+@dataFileId = 6a5839fb-5daf-4894-aa03-a9d9577f9a23
+@dictionaryFileId = 99b9ef64-02e6-487e-ad5f-c57ddca2468e
+
+@platformAdminToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
+
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，管理员
+@institutionSupervisorToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
+
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，数据集上传员7c34890d-e50b-44e1-991a-fbad1842fd25
+@datasetUploaderToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMSIsImlhdCI6MTc2NDgxOTI0MiwiZXhwIjoxNzY2NjgzMjQyfQ.Lm1gEVO0YJJwPMvyb2ejd5A-fD2cpLMIyJJfsAYpAg8oB6VCK0Dlb10o5_R3nC8u
+
+# 没有权限的用户的令牌，机构9664a7c9-e337-48d6-a55e-547c285f4ea7，用户73ae0020-822c-4296-ad0e-1436b43b8875
+@noPermissionUserToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDEzODAwMCIsImlhdCI6MTc2NTU1MzAxMSwiZXhwIjoxNzY3NDE3MDExfQ.CgYCrGEm-PmQWwdEXIBNVpb2Sv1gN9F3irgtp5Ooov5oYyOyOfv8NTaxIX3bjTk8
+
+### 创建数据集统计信息（包含字符数据）
+POST {{baseUrl}}/api/datasets/statistics/dataset-statistics
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "datasetVersionId": "{{datasetVersionId}}",
+  "version": "1.0",
+  "variables": [
+    {
+      "type": "categorical",
+      "variables": ["性别", "具体情况"],
+      "fileIndex": 0
+    },
+    {
+      "type": "numeric",
+      "variables": ["年龄", "收入"],
+      "fileIndex": 1
+    }
+  ],
+  "statisticalFiles": [
+    "姓名,性别,年龄\n张三,男,25\n李四,女,30\n王五,男,35\n赵六,女,28\n钱七,男,42",
+    "统计项,平均值,中位数\n年龄,32,30\n收入,8000,7500\n教育年限,16,16"
+  ]
+}
+
+### 根据ID获取数据集统计信息
+GET {{baseUrl}}/api/datasets/statistics/dataset-statistics/{{datasetStatisticId}}
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 根据数据集版本ID获取数据集统计信息
+GET {{baseUrl}}/api/datasets/statistics/dataset-statistics/by-dataset-version/{{datasetVersionId}}
+Authorization: Bearer {{datasetUploaderToken}}
+
+### 更新数据集统计信息（包含字符数据）
+POST {{baseUrl}}/api/datasets/statistics/dataset-statistics
+Content-Type: application/json
+Authorization: Bearer {{datasetUploaderToken}}
+
+{
+  "id": "{{datasetStatisticId}}",
+  "datasetVersionId": "{{datasetVersionId}}",
+  "version": "1.1",
+  "variables": [
+    {
+      "type": "categorical",
+      "variables": ["性别", "具体情况", "地区"],
+      "fileIndex": 0
+    },
+    {
+      "type": "numeric",
+      "variables": ["年龄", "收入", "教育年限"],
+      "fileIndex": 1
+    }
+  ],
+  "statisticalFiles": [
+    "姓名,性别,年龄,地区\n张三,男,25,北京\n李四,女,30,上海\n王五,男,35,广州\n赵六,女,28,深圳\n钱七,男,42,杭州",
+    "统计项,平均值,中位数,标准差\n年龄,32,30,7.2\n收入,8000,7500,2000\n教育年限,16,16,2"
+  ]
+}
+
+### 调用数据分析服务进行数据处理
+POST {{baseUrl}}/api/datasets/statistics/dataset-statistics/analyze
+Content-Type: application/json
+Authorization: Bearer {{institutionSupervisorToken}}
+
+{
+  "dataFileId": "{{dataFileId}}",
+  "dictionaryFileId": "{{dictionaryFileId}}"
+}

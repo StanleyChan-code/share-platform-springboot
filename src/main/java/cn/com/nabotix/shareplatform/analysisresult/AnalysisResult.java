@@ -1,4 +1,4 @@
-package cn.com.nabotix.shareplatform.entity;
+package cn.com.nabotix.shareplatform.analysisresult;
 
 import jakarta.persistence.*;
 import lombok.Data;

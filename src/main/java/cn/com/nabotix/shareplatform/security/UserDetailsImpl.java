@@ -1,6 +1,7 @@
 package cn.com.nabotix.shareplatform.security;
 
 import cn.com.nabotix.shareplatform.user.entity.User;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,29 +18,22 @@ import java.util.UUID;
  *
  * @author 陈雍文
  */
+@AllArgsConstructor
 @Getter
 public class UserDetailsImpl implements UserDetails {
+    private final UUID id;
     private final String username;
     private final String password;
     private final String phone;
-    private final UUID id;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(UUID id, String username, String phone, String password,
-                          Collection<? extends GrantedAuthority> authorities) {
-        this.id = id;
-        this.username = username;
-        this.phone = phone;
-        this.password = password;
-        this.authorities = authorities;
-    }
 
     public static @NonNull UserDetailsImpl build(@NonNull User user, List<GrantedAuthority> authorities) {
         return new UserDetailsImpl(
                 user.getId(),
                 user.getUsername(),
-                user.getPhone(),
                 user.getPassword(),
+                user.getPhone(),
                 authorities);
     }
 }

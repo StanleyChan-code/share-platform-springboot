@@ -36,24 +36,33 @@ public class AuthorityUtil {
                 !"anonymousUser".equals(authentication.getPrincipal());
     }
 
-    public static User getCurrentUser() {
-        if (!isAuthenticated()) {
-            return null;
-        }
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userService.getUserByUserId(userDetails.getId());
-    }
-
     /**
      * 获取当前认证用户的ID
      * @return 用户ID
      */
     public static UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getId();
+        if (authentication != null && authentication.getPrincipal() != null &&
+                authentication.getPrincipal() instanceof UserDetailsImpl userDetails) {
+            return userDetails.getId();
+        }
+        return null;
+    }
+
+
+    public static User getCurrentUser() {
+        UUID userId = getCurrentUserId();
+        if (userId == null) {
+            return null;
+        }
+
+        return userService.getUserByUserId(userId);
+    }
+
+
+    public static UUID getCurrentUserInstitutionId() {
+        User user = getCurrentUser();
+        return user != null ? user.getInstitutionId() : null;
     }
 
     /**
@@ -346,19 +355,6 @@ public class AuthorityUtil {
             }
 
             return false;
-        }
-
-        /**
-         * 获取当前认证用户的ID
-         *
-         * @return 用户ID
-         */
-        private UUID getCurrentUserId() {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication.getPrincipal() instanceof UserDetailsImpl userDetails) {
-                return userDetails.getId();
-            }
-            return null;
         }
     }
 }

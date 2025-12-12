@@ -1,0 +1,56 @@
+# 统计信息API测试文件
+
+@datasetId=52c50e97-baa8-41ff-92c5-7ea998f216f5
+@subjectId=70ca9c93-0198-4b09-ab6e-660105b06b59
+
+# 用户令牌（普通用户）
+@userToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
+
+# 平台管理员令牌
+@platformAdminToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
+
+# 机构管理员令牌
+@institutionSupervisorToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.YS4WV4wRdC_BNVT_6q5_tk5oy_yKV0bM4MJFTlnyOch9lXHdjbjl1A-SoNqfdXNb
+
+# 68e71bea-421c-42b6-b796-1a480190afdd机构，数据集上传员7c34890d-e50b-44e1-991a-fbad1842fd25
+@datasetUploaderToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDEwMSIsImlhdCI6MTc2NDgxOTI0MiwiZXhwIjoxNzY2NjgzMjQyfQ.Lm1gEVO0YJJwPMvyb2ejd5A-fD2cpLMIyJJfsAYpAg8oB6VCK0Dlb10o5_R3nC8u
+
+### 获取热门数据集列表（按热度排序）
+# @name getPopularDatasets
+GET http://localhost:8080/api/statistics/datasets/popular?page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 获取热门研究学科列表（按热度排序）
+# @name getPopularSubjects
+GET http://localhost:8080/api/statistics/subjects/popular?page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 获取特定数据集的热度值
+# @name getDatasetPopularity
+GET http://localhost:8080/api/statistics/datasets/popularity?datasetId={{datasetId}}
+Authorization: Bearer {{userToken}}
+
+### 获取特定研究学科的热度值
+# @name getSubjectPopularity
+GET http://localhost:8080/api/statistics/subjects/popularity?subjectId={{subjectId}}
+Authorization: Bearer {{userToken}}
+
+### 获取公开数据集列表（批量查询，不会增加热度）
+GET http://localhost:8080/api/datasets?page=0&size=10
+Authorization: Bearer {{userToken}}
+
+### 获取特定公开数据集（会增加数据集和对应学科的热度）
+GET http://localhost:8080/api/datasets/{{datasetId}}
+Authorization: Bearer {{userToken}}
+
+### 获取特定数据集的时间轴（会增加数据集和对应学科的热度）
+GET http://localhost:8080/api/datasets/{{datasetId}}/timeline
+Authorization: Bearer {{platformAdminToken}}
+
+### 获取所有激活的研究学科列表（批量查询，不会增加热度）
+GET http://localhost:8080/api/research-subjects
+Authorization: Bearer {{userToken}}
+
+### 获取特定研究学科（会增加研究学科热度）
+GET http://localhost:8080/api/research-subjects/{{subjectId}}
+Authorization: Bearer {{datasetUploaderToken}}

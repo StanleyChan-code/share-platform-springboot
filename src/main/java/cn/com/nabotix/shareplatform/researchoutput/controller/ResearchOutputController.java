@@ -2,12 +2,13 @@ package cn.com.nabotix.shareplatform.researchoutput.controller;
 
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
 import cn.com.nabotix.shareplatform.researchoutput.entity.ResearchOutput;
+import cn.com.nabotix.shareplatform.researchoutput.service.PubMedService;
 import cn.com.nabotix.shareplatform.researchoutput.service.ResearchOutputService;
 import cn.com.nabotix.shareplatform.researchoutput.dto.ResearchOutputCreateRequestDto;
 import cn.com.nabotix.shareplatform.researchoutput.dto.ResearchOutputDto;
 import cn.com.nabotix.shareplatform.security.AuthorityUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -30,14 +31,38 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/research-outputs")
 public class ResearchOutputController {
 
     private final ResearchOutputService researchOutputService;
+    private final PubMedService pubMedService;
 
-    @Autowired
-    public ResearchOutputController(ResearchOutputService researchOutputService) {
-        this.researchOutputService = researchOutputService;
+    /**
+     * 分页获取已审核通过的研究成果列表（公开接口，无需登录）
+     * 任何人都可以查看已审核通过的研究成果
+     */
+    @GetMapping("/public")
+    public ResponseEntity<ApiResponseDto<Page<ResearchOutputDto>>> getPublicApprovedResearchOutputs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Sort sort = "asc".equalsIgnoreCase(sortDir) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // 获取已审核通过的研究成果
+        Page<ResearchOutput> outputsPage = researchOutputService.getAllResearchOutputs(true, pageable);
+
+        // 转换为 DTO
+        List<ResearchOutputDto> dtos = outputsPage.getContent().stream()
+                .map(researchOutputService::convertToDto)
+                .collect(Collectors.toList());
+
+        Page<ResearchOutputDto> dtosPage = new PageImpl<>(dtos, pageable, outputsPage.getTotalElements());
+
+        return ResponseEntity.ok(ApiResponseDto.success(dtosPage, "获取公开研究成果列表成功"));
     }
 
     /**
@@ -152,5 +177,31 @@ public class ResearchOutputController {
         ResearchOutputDto dto = researchOutputService.convertToDto(output);
 
         return ResponseEntity.ok(ApiResponseDto.success(dto, "获取研究成果成功"));
+    }
+
+    /**
+     * 根据PubMed ID获取文章信息
+     * 已登录用户可以查询PubMed文章信息
+     */
+    @GetMapping("/pubmed/{pubMedId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponseDto<ResearchOutputDto>> getResearchOutputFromPubMed(
+            @PathVariable String pubMedId) {
+        try {
+            UUID userId = AuthorityUtil.getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponseDto.error("用户未登录"));
+            }
+
+            ResearchOutput researchOutput = pubMedService.fetchPaperAsResearchOutput(pubMedId);
+            ResearchOutputDto dto = researchOutputService.convertToDto(researchOutput);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponseDto.success(dto, "通过PubMed ID拉取研究成果成功"));
+        } catch (Exception e) {
+            log.error("Failed to create research output from PubMed ID: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.error("通过PubMed ID拉取研究成果失败: " + e.getMessage()));
+        }
     }
 }

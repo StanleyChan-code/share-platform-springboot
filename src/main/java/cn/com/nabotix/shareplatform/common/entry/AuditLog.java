@@ -37,7 +37,7 @@ public class AuditLog {
      */
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    private Map<String, Object> payload;
+    private Payload payload;
 
     /**
      * 日志创建时间
@@ -50,4 +50,31 @@ public class AuditLog {
      */
     @Column(name = "ip_address", nullable = false, length = 64)
     private String ipAddress = "";
+
+
+    /**
+     * 审计日志载荷数据类
+     */
+    @Data
+    public static class Payload {
+        /**
+         * 操作行为
+         */
+        private String action;
+
+        /**
+         * 资源ID
+         */
+        private UUID resourceId;
+
+        /**
+         * 资源标题
+         */
+        private String resourceTitle;
+
+        /**
+         * 额外参数
+         */
+        private Map<String, Object> additionalParams = Map.of();
+    }
 }

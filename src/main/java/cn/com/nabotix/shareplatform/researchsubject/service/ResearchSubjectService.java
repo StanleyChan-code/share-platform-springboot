@@ -4,22 +4,29 @@ import cn.com.nabotix.shareplatform.researchsubject.entity.ResearchSubject;
 import cn.com.nabotix.shareplatform.researchsubject.dto.ResearchSubjectCreateRequestDto;
 import cn.com.nabotix.shareplatform.researchsubject.dto.ResearchSubjectDto;
 import cn.com.nabotix.shareplatform.researchsubject.repository.ResearchSubjectRepository;
+import cn.com.nabotix.shareplatform.popularity.service.PopularityService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * 研究学科服务类
+ * 提供研究学科的增删改查功能
+ *
+ * @author 陈雍文
+ */
 @Service
+@RequiredArgsConstructor
 public class ResearchSubjectService {
 
     private final ResearchSubjectRepository researchSubjectRepository;
-
-    public ResearchSubjectService(ResearchSubjectRepository researchSubjectRepository) {
-        this.researchSubjectRepository = researchSubjectRepository;
-    }
+    private final PopularityService popularityService;
 
     /**
      * 获取所有研究学科
@@ -33,6 +40,16 @@ public class ResearchSubjectService {
     }
 
     /**
+     * 获取所有研究学科（分页）
+     *
+     * @param pageable 分页参数
+     * @return 研究学科分页列表
+     */
+    public Page<ResearchSubject> getAllSubjects(Pageable pageable) {
+        return researchSubjectRepository.findAll(pageable);
+    }
+
+    /**
      * 获取所有激活的研究学科
      * 用于公开查询接口
      *
@@ -41,7 +58,7 @@ public class ResearchSubjectService {
     public List<ResearchSubjectDto> getActiveResearchSubjects() {
         return researchSubjectRepository.findByActiveTrue().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -53,7 +70,7 @@ public class ResearchSubjectService {
     public List<ResearchSubjectDto> getInactiveResearchSubjects() {
         return researchSubjectRepository.findByActiveFalse().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -129,6 +146,12 @@ public class ResearchSubjectService {
      * @return 研究学科DTO
      */
     private ResearchSubjectDto convertToDto(ResearchSubject subject) {
+        // 从Redis获取实时热度数据
+        Long realTimeSearchCount = popularityService.getSubjectPopularity(subject.getId());
+        if (realTimeSearchCount != null) {
+            subject.setSearchCount(realTimeSearchCount);
+        }
+        
         ResearchSubjectDto dto = new ResearchSubjectDto();
         BeanUtils.copyProperties(subject, dto);
         return dto;

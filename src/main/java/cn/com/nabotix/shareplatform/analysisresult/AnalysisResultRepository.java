@@ -1,6 +1,5 @@
-package cn.com.nabotix.shareplatform.repository;
+package cn.com.nabotix.shareplatform.analysisresult;
 
-import cn.com.nabotix.shareplatform.entity.AnalysisResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

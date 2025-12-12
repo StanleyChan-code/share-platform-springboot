@@ -6,6 +6,7 @@ import cn.com.nabotix.shareplatform.user.dto.UserCreateRequestDto;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.service.UserService;
 import cn.com.nabotix.shareplatform.security.UserAuthority;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -18,15 +19,12 @@ import org.springframework.web.bind.annotation.*;
  *
  * @author 陈雍文
  */
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/manage/users")
 public class UserManageController {
 
     private final UserService userService;
-
-    public UserManageController(UserService userService) {
-        this.userService = userService;
-    }
 
     /**
      * 平台管理员创建用户

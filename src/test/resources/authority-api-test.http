@@ -15,6 +15,9 @@
 # 9664a7c9-e337-48d6-a55e-547c285f4ea7机构，管理员99ec84d8-9ccb-4a53-be97-4f385cb2d044
 @personToken = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDIwMSIsImlhdCI6MTc2NDc1MjUyNywiZXhwIjoxNzY2NjE2NTI3fQ.dPuF4svGddDkbg5_c9ZXs-qLJdXHSTa76D2OWhEHV2WijYI9QNg1VRrbFSUaVmLN
 
+# 没有权限的用户的令牌，机构9664a7c9-e337-48d6-a55e-547c285f4ea7，用户73ae0020-822c-4296-ad0e-1436b43b8875
+@noPermissionUserToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDEzODAwMCIsImlhdCI6MTc2NTU1MzAxMSwiZXhwIjoxNzY3NDE3MDExfQ.CgYCrGEm-PmQWwdEXIBNVpb2Sv1gN9F3irgtp5Ooov5oYyOyOfv8NTaxIX3bjTk8
+
 
 ### 获取当前用户（自己）的权限列表 - 平台管理员
 GET {{baseUrl}}/api/users/authorities
@@ -43,7 +46,7 @@ Content-Type: application/json
 
 {
   "userId": "fc46ed5a-90f2-4edb-912a-4a1f5c0a21f0",
-  "authorities": ["platform_admin","institution_supervisor", "dataset_uploader"]
+  "authorities": ["PLATFORM_ADMIN","INSTITUTION_SUPERVISOR", "DATASET_UPLOADER"]
 }
 
 ### 更新用户权限 - 机构管理员操作（不包含平台管理员权限）
@@ -53,7 +56,7 @@ Content-Type: application/json
 
 {
   "userId": "fc46ed5a-90f2-4edb-912a-4a1f5c0a21f0",
-  "authorities": ["dataset_uploader"]
+  "authorities": ["DATASET_UPLOADER"]
 }
 
 ### 更新用户权限 - 机构管理员尝试添加平台管理员权限（应该被拒绝，且不能修改平台管理员的权限）
@@ -63,5 +66,5 @@ Content-Type: application/json
 
 {
   "userId": "fc46ed5a-90f2-4edb-912a-4a1f5c0a21f0",
-  "authorities": ["platform_admin", "dataset_uploader"]
+  "authorities": ["PLATFORM_ADMIN", "DATASET_UPLOADER"]
 }

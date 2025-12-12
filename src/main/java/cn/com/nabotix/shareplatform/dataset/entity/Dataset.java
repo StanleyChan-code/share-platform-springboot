@@ -83,18 +83,6 @@ public class Dataset {
     private Instant endDate;
 
     /**
-     * 记录数量
-     */
-    @Column(name = "record_count")
-    private Integer recordCount;
-
-    /**
-     * 变量数量
-     */
-    @Column(name = "variable_count")
-    private Integer variableCount;
-
-    /**
      * 关键词数组
      */
     @Column(name = "keywords", columnDefinition = "text[]")

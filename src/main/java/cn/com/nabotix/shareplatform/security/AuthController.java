@@ -8,6 +8,7 @@ import cn.com.nabotix.shareplatform.user.service.UserService;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
 import cn.com.nabotix.shareplatform.security.jwt.JwtUtils;
 import cn.com.nabotix.shareplatform.security.jwt.JwtResponse;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin
+@RequiredArgsConstructor
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -38,17 +40,6 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
     private final UserDetailsServiceImpl userDetailsServiceImpl;
-
-    public AuthController(AuthenticationManager authenticationManager, UserService userService,
-                          SmsVerificationService smsVerificationService, UserRepository userRepository,
-                          JwtUtils jwtUtils, UserDetailsServiceImpl userDetailsServiceImpl) {
-        this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.smsVerificationService = smsVerificationService;
-        this.userRepository = userRepository;
-        this.jwtUtils = jwtUtils;
-        this.userDetailsServiceImpl = userDetailsServiceImpl;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponseDto<JwtResponse>> authenticateUser(@RequestBody LoginRequest loginRequest) {

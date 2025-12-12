@@ -6,7 +6,10 @@ import cn.com.nabotix.shareplatform.institution.dto.InstitutionDto;
 import cn.com.nabotix.shareplatform.institution.service.InstitutionService;
 import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 import cn.com.nabotix.shareplatform.user.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -24,26 +26,24 @@ import java.util.UUID;
  * @author 陈雍文
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/manage/institutions")
 public class InstitutionManageController {
 
     private final InstitutionService institutionService;
     private final UserService userService;
 
-    @Autowired
-    public InstitutionManageController(InstitutionService institutionService, UserService userService) {
-        this.institutionService = institutionService;
-        this.userService = userService;
-    }
-
     /**
-     * 获取所有机构列表
+     * 获取所有机构列表（分页）
      * 仅平台管理员可访问
      */
     @GetMapping
     @PreAuthorize("hasAuthority('PLATFORM_ADMIN')")
-    public ResponseEntity<ApiResponseDto<List<InstitutionDto>>> getAllInstitutions() {
-        List<InstitutionDto> institutions = institutionService.getAllInstitutions();
+    public ResponseEntity<ApiResponseDto<Page<InstitutionDto>>> getAllInstitutions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<InstitutionDto> institutions = institutionService.getAllInstitutions(pageable);
         return ResponseEntity.ok(ApiResponseDto.success(institutions, "获取机构列表成功"));
     }
 

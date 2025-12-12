@@ -3,6 +3,7 @@ package cn.com.nabotix.shareplatform.researchoutput.service;
 import cn.com.nabotix.shareplatform.dataset.dto.PublicDatasetDto;
 import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetService;
+import cn.com.nabotix.shareplatform.dataset.service.ManageDatasetService;
 import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
 import cn.com.nabotix.shareplatform.researchoutput.entity.ResearchOutput;
 import cn.com.nabotix.shareplatform.researchoutput.repository.ResearchOutputRepository;
@@ -21,9 +22,9 @@ import java.util.UUID;
 
 /**
  * 研究成果服务类
- * 
+ * <p>
  * 提供研究成果的增删改查、审批、转换等业务逻辑处理
- * 
+ *
  * @author 陈雍文
  */
 @Slf4j
@@ -32,15 +33,15 @@ public class ResearchOutputService {
 
     private final ResearchOutputRepository researchOutputRepository;
     private final UserService userService;
-    private final DatasetService datasetService;
     private final FileManagementService fileManagementService;
+    private final ManageDatasetService manageDatasetService;
 
     @Autowired
-    public ResearchOutputService(ResearchOutputRepository researchOutputRepository, UserService userService, DatasetService datasetService, FileManagementService fileManagementService) {
+    public ResearchOutputService(ResearchOutputRepository researchOutputRepository, UserService userService, DatasetService datasetService, FileManagementService fileManagementService, ManageDatasetService manageDatasetService) {
         this.researchOutputRepository = researchOutputRepository;
         this.userService = userService;
-        this.datasetService = datasetService;
         this.fileManagementService = fileManagementService;
+        this.manageDatasetService = manageDatasetService;
     }
 
     public Page<ResearchOutput> getAllResearchOutputs(Pageable pageable) {
@@ -88,10 +89,10 @@ public class ResearchOutputService {
 
     public ResearchOutput createResearchOutput(ResearchOutput researchOutput) {
         researchOutput.setCreatedAt(Instant.now());
-        
+
         // 保存研究成果以获取ID
         ResearchOutput savedResearchOutput = researchOutputRepository.save(researchOutput);
-        
+
         // 如果有文件，将其从临时目录移动到正式目录
         if (savedResearchOutput.getFileId() != null) {
             try {
@@ -101,7 +102,7 @@ public class ResearchOutputService {
                 log.error("Failed to move research output file: {}", e.getMessage());
             }
         }
-        
+
         return savedResearchOutput;
     }
 
@@ -129,8 +130,8 @@ public class ResearchOutputService {
             return null;
         }
 
-        Dataset dataset = datasetService.getDatasetById(researchOutput.getDatasetId());
-        PublicDatasetDto datasetDto = datasetService.convertToPublicDto(dataset);
+        Dataset dataset = manageDatasetService.getDatasetById(researchOutput.getDatasetId());
+        PublicDatasetDto datasetDto = PublicDatasetDto.fromEntity(dataset);
 
         User submitter = userService.getUserByUserId(researchOutput.getSubmitterId());
         UserDto submitterDto = UserDto.fromEntity(submitter);

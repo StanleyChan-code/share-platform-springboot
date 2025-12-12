@@ -10,12 +10,18 @@ import cn.com.nabotix.shareplatform.dataset.entity.Dataset;
 import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetService;
 import cn.com.nabotix.shareplatform.dataset.service.DatasetVersionService;
+import cn.com.nabotix.shareplatform.dataset.service.ManageDatasetService;
 import cn.com.nabotix.shareplatform.security.UserAuthority;
 import cn.com.nabotix.shareplatform.security.AuthorityUtil;
 import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 import cn.com.nabotix.shareplatform.user.service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,50 +42,68 @@ import java.util.*;
  */
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/manage/datasets")
 public class DatasetManageController {
 
     private final DatasetService datasetService;
+    private final ManageDatasetService manageDatasetService;
     private final DatasetVersionService datasetVersionService;
     private final UserService userService;
     private final AuditLogService auditLogService;
 
-    @Autowired
-    public DatasetManageController(DatasetService datasetService, DatasetVersionService datasetVersionService, UserService userService, AuditLogService auditLogService) {
-        this.datasetService = datasetService;
-        this.datasetVersionService = datasetVersionService;
-        this.userService = userService;
-        this.auditLogService = auditLogService;
-    }
-
     /**
-     * 获取所有管理的数据集列表
+     * 获取所有管理的数据集列表（分页）
      * 平台管理员和机构管理员可访问所有数据集，数据集上传员只能看到自己上传的数据集
      */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
-    public ResponseEntity<ApiResponseDto<List<PublicDatasetDto>>> getAllDatasets() {
-        List<Dataset> datasets = new ArrayList<>();
-        AuthorityUtil.checkBuilder().whenHasAuthority(() -> {
-            // 平台管理员可以看到所有数据集
-            datasets.addAll(datasetService.getAllDatasets());
-        }, UserAuthority.PLATFORM_ADMIN).whenHasAuthority(() -> {
-            // 机构管理员可以看到本机构所有数据集
-            UUID institutionId = getCurrentUserInstitutionId();
-            if (institutionId != null) {
-                datasets.addAll(datasetService.getDatasetsByInstitutionId(institutionId));
-            }
-        }, UserAuthority.INSTITUTION_SUPERVISOR).whenHasAuthority(() -> {
-            // 数据集上传员只能看到自己上传的数据集
-            datasets.addAll(datasetService.getDatasetsByProviderId(AuthorityUtil.getCurrentUserId()));
-        }, UserAuthority.DATASET_UPLOADER).execute();
+    public ResponseEntity<ApiResponseDto<Page<PublicDatasetDto>>> getAllDatasets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        // 创建排序对象
+        Sort sort = "asc".equalsIgnoreCase(sortDir) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        List<Page<Dataset>> datasetPageList = new ArrayList<>();
+        boolean hasPermission = AuthorityUtil.checkBuilder()
+            .whenHasAuthority(() -> {
+                // 平台管理员可以看到所有数据集
+                datasetPageList.add(manageDatasetService.getAllDatasets(pageable));
+            }, UserAuthority.PLATFORM_ADMIN)
+            .whenHasAuthority(() -> {
+                // 机构管理员可以看到本机构所有数据集
+                if (datasetPageList.isEmpty()) { // 避免重复设置
+                    UUID institutionId = getCurrentUserInstitutionId();
+                    if (institutionId != null) {
+                        datasetPageList.add(manageDatasetService.getDatasetsByInstitutionId(institutionId, pageable));
+                    }
+                }
+            }, UserAuthority.INSTITUTION_SUPERVISOR)
+            .whenHasAuthority(() -> {
+                // 数据集上传员只能看到自己上传的数据集
+                if (datasetPageList.isEmpty()) { // 避免重复设置
+                    datasetPageList.add(manageDatasetService.getDatasetsByProviderId(AuthorityUtil.getCurrentUserId(), pageable));
+                }
+            }, UserAuthority.DATASET_UPLOADER)
+            .execute();
+
+        if (!hasPermission || datasetPageList.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponseDto.error("无权访问数据集列表"));
+        }
 
         // 转换为 DTO 并包含版本信息
-        List<PublicDatasetDto> dtos = datasets.stream()
+        Page<Dataset> datasetPage = datasetPageList.getFirst();
+        List<PublicDatasetDto> dtos = datasetPage.getContent().stream()
                 .map(datasetService::convertToPublicDto)
                 .toList();
+        
+        Page<PublicDatasetDto> dtosPage = new PageImpl<>(dtos, pageable, datasetPage.getTotalElements());
 
-        return ResponseEntity.ok(ApiResponseDto.success(dtos, "获取数据集列表成功"));
+        return ResponseEntity.ok(ApiResponseDto.success(dtosPage, "获取数据集列表成功"));
     }
 
     /**
@@ -89,7 +113,7 @@ public class DatasetManageController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<PublicDatasetDto>> getDatasetById(@PathVariable UUID id) {
-        Dataset dataset = datasetService.getDatasetById(id);
+        Dataset dataset = manageDatasetService.getDatasetById(id);
 
         if (dataset == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -125,8 +149,6 @@ public class DatasetManageController {
         dataset.setDataCollectionUnit(datasetDto.getDataCollectionUnit());
         dataset.setStartDate(datasetDto.getStartDate());
         dataset.setEndDate(datasetDto.getEndDate());
-        dataset.setRecordCount(datasetDto.getRecordCount());
-        dataset.setVariableCount(datasetDto.getVariableCount());
         dataset.setKeywords(datasetDto.getKeywords());
         dataset.setSubjectAreaId(datasetDto.getSubjectAreaId());
         dataset.setCategory(datasetDto.getCategory());
@@ -151,7 +173,7 @@ public class DatasetManageController {
         // 创建最初数据集版本记录
         DatasetVersion firstVersion = getFirstVersion(datasetDto);
 
-        Dataset createdDataset = datasetService.createDataset(dataset, firstVersion);
+        Dataset createdDataset = manageDatasetService.createDataset(dataset, firstVersion);
 
         PublicDatasetDto dto = datasetService.convertToPublicDto(createdDataset);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -166,6 +188,8 @@ public class DatasetManageController {
         firstVersion.setDataDictRecordId(datasetDto.getDataDictRecordId());
         firstVersion.setTermsAgreementRecordId(datasetDto.getTermsAgreementRecordId());
         firstVersion.setDataSharingRecordId(datasetDto.getDataSharingRecordId());
+        firstVersion.setRecordCount(datasetDto.getRecordCount());
+        firstVersion.setVariableCount(datasetDto.getVariableCount());
         firstVersion.setApproved(null);
         firstVersion.setSupervisorId(null);
         firstVersion.setPublishedDate(null);
@@ -179,7 +203,7 @@ public class DatasetManageController {
     @PutMapping("/{id}/basic-info")
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<PublicDatasetDto>> updateDatasetBasicInfo(@PathVariable UUID id, @RequestBody DatasetCreateRequestDto datasetDto) {
-        Dataset dataset = datasetService.getDatasetById(id);
+        Dataset dataset = manageDatasetService.getDatasetById(id);
 
         if (dataset == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -203,7 +227,7 @@ public class DatasetManageController {
         dataset.setSamplingMethod(datasetDto.getSamplingMethod());
         dataset.setApplicationInstitutionIds(datasetDto.getApplicationInstitutionIds());
 
-        Dataset updatedDataset = datasetService.updateDataset(id, dataset);
+        Dataset updatedDataset = manageDatasetService.updateDataset(id, dataset);
 
         PublicDatasetDto dto = datasetService.convertToPublicDto(updatedDataset);
         return ResponseEntity.ok(ApiResponseDto.success(dto, "更新数据集基本信息成功"));
@@ -216,7 +240,7 @@ public class DatasetManageController {
     @PostMapping("/{id}/versions")
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'DATASET_UPLOADER')")
     public ResponseEntity<ApiResponseDto<DatasetVersionDto>> addDatasetVersion(@PathVariable UUID id, @RequestBody DatasetCreateRequestDto datasetDto) {
-        Dataset dataset = datasetService.getDatasetById(id);
+        Dataset dataset = manageDatasetService.getDatasetById(id);
 
         if (dataset == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -238,6 +262,8 @@ public class DatasetManageController {
         newVersion.setDataDictRecordId(datasetDto.getDataDictRecordId());
         newVersion.setTermsAgreementRecordId(datasetDto.getTermsAgreementRecordId());
         newVersion.setDataSharingRecordId(datasetDto.getDataSharingRecordId());
+        newVersion.setRecordCount(datasetDto.getRecordCount());
+        newVersion.setVariableCount(datasetDto.getVariableCount());
         newVersion.setCreatedAt(Instant.now());
 
         // 设置新版本为待审核状态
@@ -263,7 +289,7 @@ public class DatasetManageController {
             @RequestBody DatasetApprovalRequestDto approvalRequest,
             HttpServletRequest request) {
 
-        Dataset dataset = datasetService.getDatasetById(id);
+        Dataset dataset = manageDatasetService.getDatasetById(id);
 
         if (dataset == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -299,24 +325,19 @@ public class DatasetManageController {
         // 如果审核通过，则更新数据集的信息
         if (approvalRequest.getApproved() != null && approvalRequest.getApproved()) {
             dataset.setCurrentVersionDate(updatedDatasetVersion.getCreatedAt());
-            datasetService.updateDataset(dataset.getId(), dataset);
+            manageDatasetService.updateDataset(dataset.getId(), dataset);
         }
 
         // 记录审核操作到审计日志
-        try {
-            String action = approvalRequest.getApproved() == null ?
-                    "RESET_DATASET_APPROVAL_STATUS" :
-                    approvalRequest.getApproved() ? "APPROVE_DATASET" : "REJECT_DATASET";
+        String action = approvalRequest.getApproved() == null ?
+                "RESET_DATASET_APPROVAL_STATUS" :
+                approvalRequest.getApproved() ? "APPROVE_DATASET" : "REJECT_DATASET";
 
-            Map<String, Object> additionalParams = new HashMap<>();
-            if (approvalRequest.getRejectionReason() != null) {
-                additionalParams.put("rejectionReason", approvalRequest.getRejectionReason());
-            }
-            auditLogService.logApprovalAction(action, datasetVersionId, dataset.getTitleCn(), additionalParams, request.getRemoteAddr());
-        } catch (Exception e) {
-            // 日志记录失败不应该影响主要业务流程
-            log.error("记录审计日志失败", e);
+        Map<String, Object> additionalParams = new HashMap<>();
+        if (approvalRequest.getRejectionReason() != null) {
+            additionalParams.put("rejectionReason", approvalRequest.getRejectionReason());
         }
+        auditLogService.logApprovalAction(action, datasetVersionId, dataset.getTitleCn(), additionalParams, request.getRemoteAddr());
         if (updatedDatasetVersion == null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponseDto.error("更新数据集审核状态失败"));

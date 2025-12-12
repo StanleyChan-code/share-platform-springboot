@@ -4,13 +4,13 @@ import cn.com.nabotix.shareplatform.institution.entity.Institution;
 import cn.com.nabotix.shareplatform.institution.dto.InstitutionCreateRequestDto;
 import cn.com.nabotix.shareplatform.institution.dto.InstitutionDto;
 import cn.com.nabotix.shareplatform.institution.repository.InstitutionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * 机构服务类
@@ -19,35 +19,29 @@ import java.util.stream.Collectors;
  * @author 陈雍文
  */
 @Service
+@RequiredArgsConstructor
 public class InstitutionService {
 
     private final InstitutionRepository institutionRepository;
 
-    @Autowired
-    public InstitutionService(InstitutionRepository institutionRepository) {
-        this.institutionRepository = institutionRepository;
-    }
-
     /**
-     * 获取所有机构列表
+     * 获取所有机构列表（分页）
      *
      * @return 机构列表
      */
-    public List<InstitutionDto> getAllInstitutions() {
-        return institutionRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public Page<InstitutionDto> getAllInstitutions(Pageable pageable) {
+        Page<Institution> institutionPage = institutionRepository.findAll(pageable);
+        return institutionPage.map(this::convertToDto);
     }
 
     /**
-     * 获取所有已验证的机构列表
+     * 获取所有已验证的机构列表（分页）
      *
      * @return 已验证的机构列表
      */
-    public List<InstitutionDto> getVerifiedInstitutions() {
-        return institutionRepository.findByVerifiedTrue().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public Page<InstitutionDto> getVerifiedInstitutions(Pageable pageable) {
+        Page<Institution> institutionPage = institutionRepository.findByVerifiedTrue(pageable);
+        return institutionPage.map(this::convertToDto);
     }
 
     /**

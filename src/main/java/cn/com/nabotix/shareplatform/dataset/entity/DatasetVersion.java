@@ -99,4 +99,16 @@ public class DatasetVersion {
      */
     @Column(name = "supervisor_id")
     private UUID supervisorId;
+
+    /**
+     * 记录数量
+     */
+    @Column(name = "record_count")
+    private Integer recordCount;
+
+    /**
+     * 变量数量
+     */
+    @Column(name = "variable_count")
+    private Integer variableCount;
 }

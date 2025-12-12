@@ -3,12 +3,14 @@ package cn.com.nabotix.shareplatform.institution.controller;
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
 import cn.com.nabotix.shareplatform.institution.dto.InstitutionDto;
 import cn.com.nabotix.shareplatform.institution.service.InstitutionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -18,24 +20,23 @@ import java.util.UUID;
  * @author 陈雍文
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/institutions")
 public class InstitutionPublicController {
 
     private final InstitutionService institutionService;
 
-    @Autowired
-    public InstitutionPublicController(InstitutionService institutionService) {
-        this.institutionService = institutionService;
-    }
-
     /**
-     * 获取所有机构列表
+     * 获取所有机构列表（分页）
      * 所有用户均可访问
      * 只返回已验证的机构
      */
     @GetMapping
-    public ResponseEntity<ApiResponseDto<List<InstitutionDto>>> getAllInstitutions() {
-        List<InstitutionDto> institutions = institutionService.getVerifiedInstitutions();
+    public ResponseEntity<ApiResponseDto<Page<InstitutionDto>>> getAllInstitutions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<InstitutionDto> institutions = institutionService.getVerifiedInstitutions(pageable);
         return ResponseEntity.ok(ApiResponseDto.success(institutions, "获取机构列表成功"));
     }
 

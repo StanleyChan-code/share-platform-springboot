@@ -41,13 +41,13 @@ public class AuditLogService {
             auditLog.setId(UUID.randomUUID());
 
             // 构造payload
-            Map<String, Object> payloadMap = Map.of(
-                    "action", action,
-                    "resourceId", resourceId,
-                    "details", details
-            );
-            
-            auditLog.setPayload(payloadMap);
+            AuditLog.Payload payload = new AuditLog.Payload();
+            payload.setAction(action);
+            payload.setResourceId(resourceId);
+            payload.setResourceTitle(null);
+            payload.setAdditionalParams(details);
+
+            auditLog.setPayload(payload);
             auditLog.setInstanceId(UUID.randomUUID());
             auditLog.setCreatedAt(Instant.now());
             auditLog.setIpAddress(ipAddress);
@@ -76,13 +76,13 @@ public class AuditLogService {
             auditLog.setIpAddress(ipAddress);
 
             // 构造payload
-            Map<String, Object> payloadMap = Map.of(
-                    "action", action,
-                    "resourceId", resourceId,
-                    "resourceTitle", resourceTitle,
-                    "additionalParams", additionalParams != null ? additionalParams : Map.of()
-            );
-            auditLog.setPayload(payloadMap);
+            AuditLog.Payload payload = new AuditLog.Payload();
+            payload.setAction(action);
+            payload.setResourceId(resourceId);
+            payload.setResourceTitle(resourceTitle);
+            payload.setAdditionalParams(additionalParams != null ? additionalParams : Map.of());
+
+            auditLog.setPayload(payload);
             auditLog.setInstanceId(resourceId);
 
             auditLogRepository.save(auditLog);

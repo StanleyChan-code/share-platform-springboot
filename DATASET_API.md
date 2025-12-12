@@ -1,32 +1,29 @@
-# 数据集管理接口文档
+# 数据集管理接口
 
-## 1. 概述
+数据集管理分为两类接口：
+- 公共接口（无需认证）：`/api/datasets`
+- 管理接口（需认证）：`/api/manage/datasets`
 
-本文档详细描述了数据集管理相关的API接口，包括数据集的创建、查询、更新和审核等操作。
+## 1. 公共数据集接口
 
-## 2. 权限说明
-
-| 角色 | 权限 |
-|------|------|
-| PLATFORM_ADMIN | 平台管理员可以管理所有数据集 |
-| INSTITUTION_SUPERVISOR | 机构管理员可以管理本机构的数据集 |
-| DATASET_UPLOADER | 数据集上传员可以创建和管理自己的数据集 |
-| DATASET_APPROVER | 数据集审核员可以审核本机构的数据集 |
-
-## 3. 数据集公共查询接口
-
-### 3.1 获取所有公开数据集列表
+### 1.1 获取所有公开数据集列表
 
 **接口地址**: `GET /api/datasets`
 
+**权限要求**: 无需认证，所有用户均可访问
+
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| page | int | 否 | 0 | 页码 |
-| size | int | 否 | 10 | 每页大小 |
-| sortBy | string | 否 | updatedAt | 排序字段 |
-| sortDir | string | 否 | desc | 排序方向(asc/desc) |
+| 参数名     | 类型     | 必填 | 默认值       | 描述             |
+|---------|--------|----|-----------|----------------|
+| page    | int    | 否  | 0         | 页码             |
+| size    | int    | 否  | 10        | 每页大小           |
+| sortBy  | string | 否  | updatedAt | 排序字段           |
+| sortDir | string | 否  | desc      | 排序方向（asc/desc） |
+
+**说明**: 
+- 匿名用户：只能看到已批准且已发布的数据集
+- 已登录用户：能看到已批准且已发布的数据集 + 已批准但未公开的用户所属机构能够申请的数据集
 
 **响应示例**:
 ```json
@@ -36,104 +33,143 @@
   "data": {
     "content": [
       {
-        "id": "uuid",
-        "titleCn": "数据集中文标题",
-        "description": "数据集描述",
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "titleCn": "某研究数据集",
+        "description": "这是数据集的描述",
         "type": "COHORT",
-        "datasetLeader": "数据集负责人",
-        "principalInvestigator": "主要研究者",
-        "institutionId": "机构ID",
+        "datasetLeader": "张三",
+        "principalInvestigator": "李四",
+        "dataCollectionUnit": "某某医院",
         "startDate": "2020-01-01T00:00:00Z",
         "endDate": "2022-12-31T00:00:00Z",
-        "recordCount": 1000,
-        "variableCount": 50,
         "keywords": ["关键词1", "关键词2"],
-        "subjectAreaId": "学科领域ID",
-        "category": "数据集分类",
-        "samplingMethod": "抽样方法",
-        "contactPerson": "联系人",
-        "contactInfo": "联系方式",
-        "demographicFields": ["人口统计字段1", "人口统计字段2"],
-        "outcomeFields": ["结果字段1", "结果字段2"],
-        "approved": true,
+        "subjectArea": {
+          "id": "550e8400-e29b-41d4-a716-446655440001",
+          "name": "医学科学"
+        },
+        "category": "临床数据",
+        "samplingMethod": "随机抽样",
         "published": true,
-        "searchCount": 0,
-        "shareAllData": false,
-        "versionNumber": "1.0",
-        "firstPublishedDate": "2022-01-01T00:00:00Z",
-        "currentVersionDate": "2022-01-01T00:00:00Z",
-        "createdAt": "2022-01-01T00:00:00Z",
-        "updatedAt": "2022-01-01T00:00:00Z",
-        "applicationInstitutionIds": ["申请机构ID1"],
-        "followUpDatasets": [],
-        "versions": []
+        "shareAllData": true,
+        "contactPerson": "王五",
+        "contactInfo": "wangwu@example.com",
+        "demographicFields": ["年龄", "性别"],
+        "outcomeFields": ["结果1", "结果2"],
+        "firstPublishedDate": "2023-01-01T00:00:00Z",
+        "currentVersionDate": "2023-01-01T00:00:00Z",
+        "updatedAt": "2023-01-01T00:00:00Z",
+        "versions": [
+          {
+            "id": "550e8400-e29b-41d4-a716-446655440002",
+            "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+            "versionNumber": "1.0",
+            "createdAt": "2023-01-01T00:00:00Z",
+            "publishedDate": "2023-01-01T00:00:00Z",
+            "description": "初始版本",
+            "recordCount": 1000,
+            "variableCount": 50,
+            "approved": true,
+            "approvedAt": "2023-01-02T00:00:00Z"
+          }
+        ]
       }
     ],
-    "pageable": {
-      "sort": {
-        "sorted": true,
-        "unsorted": false,
-        "empty": false
-      },
-      "pageNumber": 0,
-      "pageSize": 10,
-      "offset": 0,
-      "paged": true,
-      "unpaged": false
-    },
-    "totalPages": 1,
-    "totalElements": 1,
-    "last": true,
-    "numberOfElements": 1,
-    "first": true,
-    "size": 10,
-    "number": 0,
-    "sort": {
-      "sorted": true,
-      "unsorted": false,
-      "empty": false
-    },
-    "empty": false
+    "page": {
+      "size": 10,
+      "number": 0,
+      "totalElements": 3,
+      "totalPages": 1
+    }
   },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 3.2 获取时间轴形式的公开数据集列表
+### 1.2 获取指定数据集的时间轴视图
 
-**接口地址**: `GET /api/datasets/timeline`
+**接口地址**: `GET /api/datasets/{id}/timeline`
+
+**权限要求**: 无需认证，所有用户均可访问
 
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| page | int | 否 | 0 | 页码 |
-| size | int | 否 | 10 | 每页大小 |
+| 参数名 | 类型   | 必填 | 描述    |
+|-----|------|----|-------|
+| id  | UUID | 是  | 数据集ID |
+
+**说明**: 
+- 获取指定id数据集的所有随访数据集（parentDatasetId = id，时间轴视图）
+- 匿名用户：只能看到已批准且已发布的数据集
+- 已登录用户：能看到已批准且已发布的数据集 + 已批准但未公开的用户所属机构能够申请的数据集
 
 **响应示例**:
 ```json
 {
   "success": true,
   "message": "获取时间轴式公开数据集列表成功",
-  "data": {
-    "content": [
-      {
-      }
-    ]
-  },
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "titleCn": "某研究数据集",
+      "description": "这是数据集的描述",
+      "type": "COHORT",
+      "datasetLeader": "张三",
+      "principalInvestigator": "李四",
+      "dataCollectionUnit": "某某医院",
+      "startDate": "2020-01-01T00:00:00Z",
+      "endDate": "2022-12-31T00:00:00Z",
+      "keywords": ["关键词1", "关键词2"],
+      "subjectArea": {
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "name": "医学科学"
+      },
+      "category": "临床数据",
+      "samplingMethod": "随机抽样",
+      "published": true,
+      "shareAllData": true,
+      "contactPerson": "王五",
+      "contactInfo": "wangwu@example.com",
+      "demographicFields": ["年龄", "性别"],
+      "outcomeFields": ["结果1", "结果2"],
+      "firstPublishedDate": "2023-01-01T00:00:00Z",
+      "currentVersionDate": "2023-01-01T00:00:00Z",
+      "updatedAt": "2023-01-01T00:00:00Z",
+      "versions": [
+        {
+          "id": "550e8400-e29b-41d4-a716-446655440002",
+          "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+          "versionNumber": "1.0",
+          "createdAt": "2023-01-01T00:00:00Z",
+          "publishedDate": "2023-01-01T00:00:00Z",
+          "description": "初始版本",
+          "recordCount": 1000,
+          "variableCount": 50,
+          "approved": true,
+          "approvedAt": "2023-01-02T00:00:00Z"
+        }
+      ]
+    }
+  ],
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 3.3 根据ID获取特定公开数据集
+### 1.3 根据ID获取特定公开数据集
 
 **接口地址**: `GET /api/datasets/{id}`
 
+**权限要求**: 无需认证，所有用户均可访问
+
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
+| 参数名          | 类型      | 必填 | 默认值   | 描述       |
+|--------------|---------|----|-------|----------|
+| id           | UUID    | 是  | -     | 数据集ID    |
+| loadTimeline | boolean | 否  | false | 是否加载随访信息 |
+
+**说明**: 
+- 匿名用户：只能访问已批准且已发布的数据集
+- 已登录用户：能看到已批准且已发布的数据集 + 已批准但未公开的用户所属机构能够申请的数据集
 
 **响应示例**:
 ```json
@@ -141,103 +177,61 @@
   "success": true,
   "message": "获取公开数据集成功",
   "data": {
-    "id": "uuid",
-    "titleCn": "数据集中文标题",
-    "description": "数据集描述",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "titleCn": "某研究数据集",
+    "description": "这是数据集的描述",
     "type": "COHORT",
-    "datasetLeader": "数据集负责人",
-    "principalInvestigator": "主要研究者",
-    "institutionId": "机构ID",
+    "datasetLeader": "张三",
+    "principalInvestigator": "李四",
+    "dataCollectionUnit": "某某医院",
     "startDate": "2020-01-01T00:00:00Z",
     "endDate": "2022-12-31T00:00:00Z",
-    "recordCount": 1000,
-    "variableCount": 50,
     "keywords": ["关键词1", "关键词2"],
-    "subjectAreaId": "学科领域ID",
-    "category": "数据集分类",
-    "samplingMethod": "抽样方法",
-    "contactPerson": "联系人",
-    "contactInfo": "联系方式",
-    "demographicFields": ["人口统计字段1", "人口统计字段2"],
-    "outcomeFields": ["结果字段1", "结果字段2"],
-    "approved": true,
+    "subjectArea": {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "医学科学"
+    },
+    "category": "临床数据",
+    "samplingMethod": "随机抽样",
     "published": true,
-    "searchCount": 0,
-    "shareAllData": false,
-    "versionNumber": "1.0",
-    "firstPublishedDate": "2022-01-01T00:00:00Z",
-    "currentVersionDate": "2022-01-01T00:00:00Z",
-    "createdAt": "2022-01-01T00:00:00Z",
-    "updatedAt": "2022-01-01T00:00:00Z",
-    "applicationInstitutionIds": ["申请机构ID1"],
-    "followUpDatasets": [],
-    "versions": []
+    "shareAllData": true,
+    "contactPerson": "王五",
+    "contactInfo": "wangwu@example.com",
+    "demographicFields": ["年龄", "性别"],
+    "outcomeFields": ["结果1", "结果2"],
+    "firstPublishedDate": "2023-01-01T00:00:00Z",
+    "currentVersionDate": "2023-01-01T00:00:00Z",
+    "updatedAt": "2023-01-01T00:00:00Z",
+    "versions": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440002",
+        "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+        "versionNumber": "1.0",
+        "createdAt": "2023-01-01T00:00:00Z",
+        "publishedDate": "2023-01-01T00:00:00Z",
+        "description": "初始版本",
+        "recordCount": 1000,
+        "variableCount": 50,
+        "approved": true,
+        "approvedAt": "2023-01-02T00:00:00Z"
+      }
+    ]
   },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 3.4 获取特定数据集的时间轴视图
-
-**接口地址**: `GET /api/datasets/{id}/timeline`
-
-**请求参数**:
-
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
-
-**响应示例**:
-```json
-{
-  "success": true,
-  "message": "获取数据集时间轴视图成功",
-  "data": {
-    "id": "uuid",
-    "titleCn": "数据集中文标题",
-    "description": "数据集描述",
-    "type": "COHORT",
-    "datasetLeader": "数据集负责人",
-    "principalInvestigator": "主要研究者",
-    "institutionId": "机构ID",
-    "startDate": "2020-01-01T00:00:00Z",
-    "endDate": "2022-12-31T00:00:00Z",
-    "recordCount": 1000,
-    "variableCount": 50,
-    "keywords": ["关键词1", "关键词2"],
-    "subjectAreaId": "学科领域ID",
-    "category": "数据集分类",
-    "samplingMethod": "抽样方法",
-    "contactPerson": "联系人",
-    "contactInfo": "联系方式",
-    "demographicFields": ["人口统计字段1", "人口统计字段2"],
-    "outcomeFields": ["结果字段1", "结果字段2"],
-    "approved": true,
-    "published": true,
-    "searchCount": 0,
-    "shareAllData": false,
-    "versionNumber": "1.0",
-    "firstPublishedDate": "2022-01-01T00:00:00Z",
-    "currentVersionDate": "2022-01-01T00:00:00Z",
-    "createdAt": "2022-01-01T00:00:00Z",
-    "updatedAt": "2022-01-01T00:00:00Z",
-    "applicationInstitutionIds": ["申请机构ID1"],
-    "followUpDatasets": [],
-    "versions": []
-  },
-  "timestamp": "2025-12-01T10:00:00Z"
-}
-```
-
-### 3.5 根据数据集ID获取所有版本信息
+### 1.4 根据数据集ID获取所有版本信息
 
 **接口地址**: `GET /api/datasets/{id}/versions`
 
+**权限要求**: 需要认证
+
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
+| 参数名 | 类型   | 必填 | 描述    |
+|-----|------|----|-------|
+| id  | UUID | 是  | 数据集ID |
 
 **响应示例**:
 ```json
@@ -246,133 +240,175 @@
   "message": "获取数据集版本信息成功",
   "data": [
     {
-      "id": "uuid",
-      "datasetId": "数据集ID",
+      "id": "550e8400-e29b-41d4-a716-446655440002",
+      "datasetId": "550e8400-e29b-41d4-a716-446655440000",
       "versionNumber": "1.0",
-      "description": "版本描述",
-      "fileRecordId": "数据文件记录ID",
-      "dataDictRecordId": "数据字典文件记录ID",
-      "termsAgreementRecordId": "条款协议文件记录ID",
-      "dataSharingRecordId": "数据分享文件记录ID",
+      "createdAt": "2023-01-01T00:00:00Z",
+      "publishedDate": "2023-01-01T00:00:00Z",
+      "description": "初始版本",
+      "recordCount": 1000,
+      "variableCount": 50,
       "approved": true,
-      "approvedAt": "2022-01-01T00:00:00Z",
-      "rejectReason": "拒绝原因",
-      "supervisor": {
-        "id": "审核员ID",
-        "realName": "审核员姓名"
-      },
-      "createdAt": "2022-01-01T00:00:00Z",
-      "updatedAt": "2022-01-01T00:00:00Z"
+      "approvedAt": "2023-01-02T00:00:00Z"
     }
   ],
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-## 4. 数据集文件下载接口
-
-### 4.1 下载数据字典文件
+### 1.5 下载数据集版本的数据字典文件
 
 **接口地址**: `GET /api/datasets/{datasetId}/versions/{versionId}/data-dictionary`
 
+**权限要求**: 需要认证
+
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| datasetId | UUID | 是 | 数据集ID |
-| versionId | UUID | 是 | 版本ID |
+| 参数名       | 类型   | 必填 | 描述    |
+|-----------|------|----|-------|
+| datasetId | UUID | 是  | 数据集ID |
+| versionId | UUID | 是  | 版本ID  |
 
-**响应**: 文件流
+**响应示例**:
+```text
+文件流内容
+```
 
-### 4.2 下载使用协议文件
+### 1.6 下载数据集版本的使用协议文件
 
 **接口地址**: `GET /api/datasets/{datasetId}/versions/{versionId}/terms-agreement`
 
+**权限要求**: 需要认证
+
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| datasetId | UUID | 是 | 数据集ID |
-| versionId | UUID | 是 | 版本ID |
+| 参数名       | 类型   | 必填 | 描述    |
+|-----------|------|----|-------|
+| datasetId | UUID | 是  | 数据集ID |
+| versionId | UUID | 是  | 版本ID  |
 
-**响应**: 文件流
+**响应示例**:
+```text
+文件流内容
+```
 
-### 4.3 下载数据分享文件
+### 1.7 下载数据集版本的数据分享文件
 
 **接口地址**: `GET /api/datasets/{datasetId}/versions/{versionId}/data-sharing`
 
+**权限要求**: 需要认证且有相应权限
+
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| datasetId | UUID | 是 | 数据集ID |
-| versionId | UUID | 是 | 版本ID |
+| 参数名       | 类型   | 必填 | 描述    |
+|-----------|------|----|-------|
+| datasetId | UUID | 是  | 数据集ID |
+| versionId | UUID | 是  | 版本ID  |
 
-**响应**: 文件流
+**说明**: 
+- 需要用户登录并且有相应的申请审批通过记录，或者自己是提供者
 
-## 5. 数据集管理接口
+**响应示例**:
+```text
+文件流内容
+```
 
-### 5.1 获取所有管理的数据集列表
+## 2. 管理数据集接口
+
+### 2.1 获取所有管理的数据集列表
 
 **接口地址**: `GET /api/manage/datasets`
 
-**权限要求**: PLATFORM_ADMIN, INSTITUTION_SUPERVISOR, DATASET_UPLOADER
+**权限要求**: PLATFORM_ADMIN、INSTITUTION_SUPERVISOR、DATASET_UPLOADER
+
+**请求参数**:
+
+| 参数名     | 类型     | 必填 | 默认值       | 描述             |
+|---------|--------|----|-----------|----------------|
+| page    | int    | 否  | 0         | 页码             |
+| size    | int    | 否  | 10        | 每页大小           |
+| sortBy  | string | 否  | updatedAt | 排序字段           |
+| sortDir | string | 否  | desc      | 排序方向（asc/desc） |
+
+**说明**: 
+- 平台管理员和机构管理员可访问所有数据集
+- 数据集上传员只能看到自己上传的数据集
 
 **响应示例**:
 ```json
 {
   "success": true,
   "message": "获取数据集列表成功",
-  "data": [
-    {
-      "id": "uuid",
-      "titleCn": "数据集中文标题",
-      "description": "数据集描述",
-      "type": "COHORT",
-      "datasetLeader": "数据集负责人",
-      "principalInvestigator": "主要研究者",
-      "institutionId": "机构ID",
-      "startDate": "2020-01-01T00:00:00Z",
-      "endDate": "2022-12-31T00:00:00Z",
-      "recordCount": 1000,
-      "variableCount": 50,
-      "keywords": ["关键词1", "关键词2"],
-      "subjectAreaId": "学科领域ID",
-      "category": "数据集分类",
-      "samplingMethod": "抽样方法",
-      "contactPerson": "联系人",
-      "contactInfo": "联系方式",
-      "demographicFields": ["人口统计字段1", "人口统计字段2"],
-      "outcomeFields": ["结果字段1", "结果字段2"],
-      "approved": true,
-      "published": true,
-      "searchCount": 0,
-      "shareAllData": false,
-      "versionNumber": "1.0",
-      "firstPublishedDate": "2022-01-01T00:00:00Z",
-      "currentVersionDate": "2022-01-01T00:00:00Z",
-      "createdAt": "2022-01-01T00:00:00Z",
-      "updatedAt": "2022-01-01T00:00:00Z",
-      "applicationInstitutionIds": ["申请机构ID1"],
-      "followUpDatasets": [],
-      "versions": []
+  "data": {
+    "content": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "titleCn": "某研究数据集",
+        "description": "这是数据集的描述",
+        "type": "COHORT",
+        "datasetLeader": "张三",
+        "principalInvestigator": "李四",
+        "dataCollectionUnit": "某某医院",
+        "startDate": "2020-01-01T00:00:00Z",
+        "endDate": "2022-12-31T00:00:00Z",
+        "keywords": ["关键词1", "关键词2"],
+        "subjectArea": {
+          "id": "550e8400-e29b-41d4-a716-446655440001",
+          "name": "医学科学"
+        },
+        "category": "临床数据",
+        "samplingMethod": "随机抽样",
+        "published": true,
+        "shareAllData": true,
+        "contactPerson": "王五",
+        "contactInfo": "wangwu@example.com",
+        "demographicFields": ["年龄", "性别"],
+        "outcomeFields": ["结果1", "结果2"],
+        "firstPublishedDate": "2023-01-01T00:00:00Z",
+        "currentVersionDate": "2023-01-01T00:00:00Z",
+        "updatedAt": "2023-01-01T00:00:00Z",
+        "versions": [
+          {
+            "id": "550e8400-e29b-41d4-a716-446655440002",
+            "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+            "versionNumber": "1.0",
+            "createdAt": "2023-01-01T00:00:00Z",
+            "publishedDate": "2023-01-01T00:00:00Z",
+            "description": "初始版本",
+            "recordCount": 1000,
+            "variableCount": 50,
+            "approved": true,
+            "approvedAt": "2023-01-02T00:00:00Z"
+          }
+        ]
+      }
+    ],
+    "page": {
+      "size": 10,
+      "number": 0,
+      "totalElements": 3,
+      "totalPages": 1
     }
-  ],
+  },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 5.2 根据ID获取特定管理的数据集
+### 2.2 根据ID获取特定管理的数据集
 
 **接口地址**: `GET /api/manage/datasets/{id}`
 
-**权限要求**: PLATFORM_ADMIN, INSTITUTION_SUPERVISOR, DATASET_UPLOADER
+**权限要求**: PLATFORM_ADMIN、INSTITUTION_SUPERVISOR、DATASET_UPLOADER
 
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
+| 参数名 | 类型   | 必填 | 描述    |
+|-----|------|----|-------|
+| id  | UUID | 是  | 数据集ID |
+
+**说明**: 
+- 平台管理员和机构管理员可访问所有数据集
+- 数据集上传员只能看到自己上传数据集
 
 **响应示例**:
 ```json
@@ -380,79 +416,87 @@
   "success": true,
   "message": "获取数据集成功",
   "data": {
-    "id": "uuid",
-    "titleCn": "数据集中文标题",
-    "description": "数据集描述",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "titleCn": "某研究数据集",
+    "description": "这是数据集的描述",
     "type": "COHORT",
-    "datasetLeader": "数据集负责人",
-    "principalInvestigator": "主要研究者",
-    "institutionId": "机构ID",
+    "datasetLeader": "张三",
+    "principalInvestigator": "李四",
+    "dataCollectionUnit": "某某医院",
     "startDate": "2020-01-01T00:00:00Z",
     "endDate": "2022-12-31T00:00:00Z",
-    "recordCount": 1000,
-    "variableCount": 50,
     "keywords": ["关键词1", "关键词2"],
-    "subjectAreaId": "学科领域ID",
-    "category": "数据集分类",
-    "samplingMethod": "抽样方法",
-    "contactPerson": "联系人",
-    "contactInfo": "联系方式",
-    "demographicFields": ["人口统计字段1", "人口统计字段2"],
-    "outcomeFields": ["结果字段1", "结果字段2"],
-    "approved": true,
+    "subjectArea": {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "医学科学"
+    },
+    "category": "临床数据",
+    "samplingMethod": "随机抽样",
     "published": true,
-    "searchCount": 0,
-    "shareAllData": false,
-    "versionNumber": "1.0",
-    "firstPublishedDate": "2022-01-01T00:00:00Z",
-    "currentVersionDate": "2022-01-01T00:00:00Z",
-    "createdAt": "2022-01-01T00:00:00Z",
-    "updatedAt": "2022-01-01T00:00:00Z",
-    "applicationInstitutionIds": ["申请机构ID1"],
-    "followUpDatasets": [],
-    "versions": []
+    "shareAllData": true,
+    "contactPerson": "王五",
+    "contactInfo": "wangwu@example.com",
+    "demographicFields": ["年龄", "性别"],
+    "outcomeFields": ["结果1", "结果2"],
+    "firstPublishedDate": "2023-01-01T00:00:00Z",
+    "currentVersionDate": "2023-01-01T00:00:00Z",
+    "updatedAt": "2023-01-01T00:00:00Z",
+    "versions": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440002",
+        "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+        "versionNumber": "1.0",
+        "createdAt": "2023-01-01T00:00:00Z",
+        "publishedDate": "2023-01-01T00:00:00Z",
+        "description": "初始版本",
+        "recordCount": 1000,
+        "variableCount": 50,
+        "approved": true,
+        "approvedAt": "2023-01-02T00:00:00Z"
+      }
+    ]
   },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 5.3 创建新的数据集
+### 2.3 创建新的数据集
 
 **接口地址**: `POST /api/manage/datasets`
 
-**权限要求**: PLATFORM_ADMIN, INSTITUTION_SUPERVISOR, DATASET_UPLOADER
+**权限要求**: PLATFORM_ADMIN、INSTITUTION_SUPERVISOR、DATASET_UPLOADER
 
 **请求体**:
 ```json
 {
-  "titleCn": "数据集中文标题",
-  "description": "数据集描述",
+  "titleCn": "新数据集",
+  "description": "这是一个新数据集的描述",
   "type": "COHORT",
-  "datasetLeader": "数据集负责人",
-  "principalInvestigator": "主要研究者",
-  "dataCollectionUnit": "数据收集单位",
+  "datasetLeader": "张三",
+  "principalInvestigator": "李四",
+  "dataCollectionUnit": "某某医院",
   "startDate": "2020-01-01",
   "endDate": "2022-12-31",
-  "recordCount": 1000,
-  "variableCount": 50,
   "keywords": ["关键词1", "关键词2"],
-  "subjectAreaId": "学科领域ID",
-  "category": "数据集分类",
-  "samplingMethod": "抽样方法",
+  "subjectAreaId": "550e8400-e29b-41d4-a716-446655440001",
+  "category": "临床数据",
+  "samplingMethod": "随机抽样",
   "published": true,
-  "shareAllData": false,
-  "contactPerson": "联系人",
-  "contactInfo": "联系方式",
-  "demographicFields": ["人口统计字段1", "人口统计字段2"],
-  "outcomeFields": ["结果字段1", "结果字段2"],
-  "parentDatasetId": "父数据集ID",
-  "applicationInstitutionIds": ["申请机构ID1"],
+  "shareAllData": true,
+  "contactPerson": "王五",
+  "contactInfo": "wangwu@example.com",
+  "demographicFields": ["年龄", "性别"],
+  "outcomeFields": ["结果1", "结果2"],
+  "parentDatasetId": "550e8400-e29b-41d4-a716-446655440002",
+  "applicationInstitutionIds": ["550e8400-e29b-41d4-a716-446655440003"],
   "versionNumber": "1.0",
-  "fileRecordId": "数据文件记录ID",
-  "dataDictRecordId": "数据字典文件记录ID",
-  "termsAgreementRecordId": "条款协议文件记录ID",
-  "dataSharingRecordId": "数据分享文件记录ID",
-  "versionDescription": "版本描述"
+  "versionDescription": "初始版本",
+  "fileRecordId": "550e8400-e29b-41d4-a716-446655440004",
+  "dataDictRecordId": "550e8400-e29b-41d4-a716-446655440005",
+  "termsAgreementRecordId": "550e8400-e29b-41d4-a716-446655440006",
+  "dataSharingRecordId": "550e8400-e29b-41d4-a716-446655440007",
+  "recordCount": 1000,
+  "variableCount": 50
 }
 ```
 
@@ -462,55 +506,82 @@
   "success": true,
   "message": "创建数据集成功",
   "data": {
-    "id": "uuid",
-    "titleCn": "数据集中文标题",
-    "description": "数据集描述",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "titleCn": "新数据集",
+    "description": "这是一个新数据集的描述",
     "type": "COHORT",
-    "datasetLeader": "数据集负责人",
-    "principalInvestigator": "主要研究者",
-    "institutionId": "机构ID",
+    "datasetLeader": "张三",
+    "principalInvestigator": "李四",
+    "dataCollectionUnit": "某某医院",
     "startDate": "2020-01-01T00:00:00Z",
     "endDate": "2022-12-31T00:00:00Z",
-    "recordCount": 1000,
-    "variableCount": 50,
     "keywords": ["关键词1", "关键词2"],
-    "subjectAreaId": "学科领域ID",
-    "category": "数据集分类",
-    "samplingMethod": "抽样方法",
-    "contactPerson": "联系人",
-    "contactInfo": "联系方式",
-    "demographicFields": ["人口统计字段1", "人口统计字段2"],
-    "outcomeFields": ["结果字段1", "结果字段2"],
-    "approved": true,
+    "subjectArea": {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "医学科学"
+    },
+    "category": "临床数据",
+    "samplingMethod": "随机抽样",
     "published": true,
-    "searchCount": 0,
-    "shareAllData": false,
-    "versionNumber": "1.0",
-    "firstPublishedDate": "2022-01-01T00:00:00Z",
-    "currentVersionDate": "2022-01-01T00:00:00Z",
-    "createdAt": "2022-01-01T00:00:00Z",
-    "updatedAt": "2022-01-01T00:00:00Z",
-    "applicationInstitutionIds": ["申请机构ID1"],
-    "followUpDatasets": [],
-    "versions": []
+    "shareAllData": true,
+    "contactPerson": "王五",
+    "contactInfo": "wangwu@example.com",
+    "demographicFields": ["年龄", "性别"],
+    "outcomeFields": ["结果1", "结果2"],
+    "firstPublishedDate": "2025-12-01T10:00:00Z",
+    "currentVersionDate": "2025-12-01T10:00:00Z",
+    "updatedAt": "2025-12-01T10:00:00Z",
+    "versions": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440008",
+        "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+        "versionNumber": "1.0",
+        "createdAt": "2025-12-01T10:00:00Z",
+        "publishedDate": null,
+        "description": "初始版本",
+        "recordCount": 1000,
+        "variableCount": 50,
+        "approved": null,
+        "approvedAt": null
+      }
+    ]
   },
   "timestamp": "2025-12-01T10:00:00Z"
 }
 ```
 
-### 5.4 更新数据集基本信息
+### 2.4 更新现有数据集基本信息
 
 **接口地址**: `PUT /api/manage/datasets/{id}/basic-info`
 
-**权限要求**: PLATFORM_ADMIN, INSTITUTION_SUPERVISOR, DATASET_UPLOADER
+**权限要求**: PLATFORM_ADMIN、INSTITUTION_SUPERVISOR、DATASET_UPLOADER
 
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
+| 参数名 | 类型   | 必填 | 描述    |
+|-----|------|----|-------|
+| id  | UUID | 是  | 数据集ID |
 
-**请求体**: 同创建数据集的请求体，仅包含需要更新的基础信息字段
+**请求体**:
+```json
+{
+  "description": "更新后的数据集描述",
+  "keywords": ["关键词1", "关键词2", "关键词3"],
+  "published": false,
+  "shareAllData": false,
+  "contactPerson": "王五",
+  "contactInfo": "wangwu_updated@example.com",
+  "demographicFields": ["年龄", "性别", "职业"],
+  "outcomeFields": ["结果1", "结果2", "结果3"],
+  "samplingMethod": "分层抽样",
+  "applicationInstitutionIds": ["550e8400-e29b-41d4-a716-446655440003", "550e8400-e29b-41d4-a716-446655440004"]
+}
+```
+
+**说明**: 
+- 平台管理员可更新任意数据集
+- 机构管理员只能更新自己机构的数据集
+- 数据集上传员只能更新自己的数据集
 
 **响应示例**:
 ```json
@@ -518,66 +589,80 @@
   "success": true,
   "message": "更新数据集基本信息成功",
   "data": {
-    "id": "uuid",
-    "titleCn": "数据集中文标题",
-    "description": "数据集描述",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "titleCn": "新数据集",
+    "description": "更新后的数据集描述",
     "type": "COHORT",
-    "datasetLeader": "数据集负责人",
-    "principalInvestigator": "主要研究者",
-    "institutionId": "机构ID",
+    "datasetLeader": "张三",
+    "principalInvestigator": "李四",
+    "dataCollectionUnit": "某某医院",
     "startDate": "2020-01-01T00:00:00Z",
     "endDate": "2022-12-31T00:00:00Z",
-    "recordCount": 1000,
-    "variableCount": 50,
-    "keywords": ["关键词1", "关键词2"],
-    "subjectAreaId": "学科领域ID",
-    "category": "数据集分类",
-    "samplingMethod": "抽样方法",
-    "contactPerson": "联系人",
-    "contactInfo": "联系方式",
-    "demographicFields": ["人口统计字段1", "人口统计字段2"],
-    "outcomeFields": ["结果字段1", "结果字段2"],
-    "approved": true,
-    "published": true,
-    "searchCount": 0,
+    "keywords": ["关键词1", "关键词2", "关键词3"],
+    "subjectArea": {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "医学科学"
+    },
+    "category": "临床数据",
+    "samplingMethod": "分层抽样",
+    "published": false,
     "shareAllData": false,
-    "versionNumber": "1.0",
-    "firstPublishedDate": "2022-01-01T00:00:00Z",
-    "currentVersionDate": "2022-01-01T00:00:00Z",
-    "createdAt": "2022-01-01T00:00:00Z",
-    "updatedAt": "2022-01-01T00:00:00Z",
-    "applicationInstitutionIds": ["申请机构ID1"],
-    "followUpDatasets": [],
-    "versions": []
+    "contactPerson": "王五",
+    "contactInfo": "wangwu_updated@example.com",
+    "demographicFields": ["年龄", "性别", "职业"],
+    "outcomeFields": ["结果1", "结果2", "结果3"],
+    "firstPublishedDate": "2025-12-01T10:00:00Z",
+    "currentVersionDate": "2025-12-01T10:00:00Z",
+    "updatedAt": "2025-12-01T11:00:00Z",
+    "versions": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440008",
+        "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+        "versionNumber": "1.0",
+        "createdAt": "2025-12-01T10:00:00Z",
+        "publishedDate": null,
+        "description": "初始版本",
+        "recordCount": 1000,
+        "variableCount": 50,
+        "approved": null,
+        "approvedAt": null
+      }
+    ]
   },
-  "timestamp": "2025-12-01T10:00:00Z"
+  "timestamp": "2025-12-01T11:00:00Z"
 }
 ```
 
-### 5.5 为现有数据集添加新版本
+### 2.5 为现有数据集添加新版本
 
 **接口地址**: `POST /api/manage/datasets/{id}/versions`
 
-**权限要求**: PLATFORM_ADMIN, INSTITUTION_SUPERVISOR, DATASET_UPLOADER
+**权限要求**: PLATFORM_ADMIN、INSTITUTION_SUPERVISOR、DATASET_UPLOADER
 
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
+| 参数名 | 类型   | 必填 | 描述    |
+|-----|------|----|-------|
+| id  | UUID | 是  | 数据集ID |
 
 **请求体**:
 ```json
 {
   "versionNumber": "2.0",
-  "description": "版本描述",
-  "fileRecordId": "数据文件记录ID",
-  "dataDictRecordId": "数据字典文件记录ID",
-  "termsAgreementRecordId": "条款协议文件记录ID",
-  "dataSharingRecordId": "数据分享文件记录ID",
-  "versionDescription": "版本描述"
+  "description": "第二版",
+  "fileRecordId": "550e8400-e29b-41d4-a716-446655440009",
+  "dataDictRecordId": "550e8400-e29b-41d4-a716-446655440010",
+  "termsAgreementRecordId": "550e8400-e29b-41d4-a716-446655440011",
+  "dataSharingRecordId": "550e8400-e29b-41d4-a716-446655440012",
+  "recordCount": 1200,
+  "variableCount": 55
 }
 ```
+
+**说明**: 
+- 平台管理员可为任意数据集添加版本
+- 机构管理员只能为自己机构的数据集添加版本
+- 数据集上传员只能为自己的数据集添加版本
 
 **响应示例**:
 ```json
@@ -585,45 +670,54 @@
   "success": true,
   "message": "添加数据集新版本成功",
   "data": {
-    "id": "uuid",
-    "datasetId": "数据集ID",
+    "id": "550e8400-e29b-41d4-a716-446655440013",
+    "datasetId": "550e8400-e29b-41d4-a716-446655440000",
     "versionNumber": "2.0",
-    "description": "版本描述",
-    "fileRecordId": "数据文件记录ID",
-    "dataDictRecordId": "数据字典文件记录ID",
-    "termsAgreementRecordId": "条款协议文件记录ID",
-    "dataSharingRecordId": "数据分享文件记录ID",
+    "createdAt": "2025-12-01T11:00:00Z",
+    "publishedDate": null,
+    "description": "第二版",
+    "recordCount": 1200,
+    "variableCount": 55,
     "approved": null,
     "approvedAt": null,
     "rejectReason": null,
-    "supervisor": null,
-    "createdAt": "2022-01-01T00:00:00Z",
-    "updatedAt": "2022-01-01T00:00:00Z"
+    "supervisor": null
   },
-  "timestamp": "2025-12-01T10:00:00Z"
+  "timestamp": "2025-12-01T11:00:00Z"
 }
 ```
 
-### 5.6 修改数据集审核状态
+### 2.6 修改数据集审核状态
 
 **接口地址**: `PUT /api/manage/datasets/{id}/{datasetVersionId}/approval`
 
-**权限要求**: PLATFORM_ADMIN, INSTITUTION_SUPERVISOR, DATASET_APPROVER
+**权限要求**: PLATFORM_ADMIN、INSTITUTION_SUPERVISOR、DATASET_APPROVER
 
 **请求参数**:
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| id | UUID | 是 | 数据集ID |
-| datasetVersionId | UUID | 是 | 数据集版本ID |
+| 参数名              | 类型   | 必填 | 描述      |
+|------------------|------|----|---------|
+| id               | UUID | 是  | 数据集ID   |
+| datasetVersionId | UUID | 是  | 数据集版本ID |
 
 **请求体**:
 ```json
 {
   "approved": true,
-  "rejectionReason": "拒绝原因（仅在approved为false时需要）"
+  "rejectionReason": null
 }
 ```
+
+或者驳回:
+```json
+{
+  "approved": false,
+  "rejectionReason": "数据不符合要求"
+}
+```
+
+**说明**: 
+- 平台管理员、机构管理员和数据集审核员可修改任意数据集的审核状态
 
 **响应示例**:
 ```json
@@ -631,7 +725,23 @@
   "success": true,
   "message": "数据集审核通过",
   "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440013",
+    "datasetId": "550e8400-e29b-41d4-a716-446655440000",
+    "versionNumber": "2.0",
+    "createdAt": "2025-12-01T11:00:00Z",
+    "publishedDate": "2025-12-01T12:00:00Z",
+    "description": "第二版",
+    "recordCount": 1200,
+    "variableCount": 55,
+    "approved": true,
+    "approvedAt": "2025-12-01T12:00:00Z",
+    "rejectReason": null,
+    "supervisor": {
+      "id": "550e8400-e29b-41d4-a716-446655440014",
+      "username": "admin",
+      "realName": "管理员"
+    }
   },
-  "timestamp": "2025-12-01T10:00:00Z"
+  "timestamp": "2025-12-01T12:00:00Z"
 }
 ```

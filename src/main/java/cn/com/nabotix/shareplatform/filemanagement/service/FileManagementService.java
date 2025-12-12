@@ -6,7 +6,7 @@ import cn.com.nabotix.shareplatform.filemanagement.entity.FileChunkRecord;
 import cn.com.nabotix.shareplatform.filemanagement.entity.FileRecord;
 import cn.com.nabotix.shareplatform.filemanagement.repository.FileChunkRecordRepository;
 import cn.com.nabotix.shareplatform.filemanagement.repository.FileRecordRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -35,6 +35,7 @@ import java.util.UUID;
  *
  * @author 陈雍文
  */
+@RequiredArgsConstructor
 @Service
 public class FileManagementService {
 
@@ -49,19 +50,8 @@ public class FileManagementService {
     private static final String TEMP_RELATED_PATH = "tmp/";
     private static final String CHUNKS_RELATED_PATH = "chunks/";
 
-    @Autowired
-    public FileManagementService(FileRecordRepository fileRecordRepository, FileChunkRecordRepository fileChunkRecordRepository) {
-        this.fileRecordRepository = fileRecordRepository;
-        this.fileChunkRecordRepository = fileChunkRecordRepository;
-
+    static  {
         // 创建必要的目录
-        createDirectories();
-    }
-
-    /**
-     * 创建必要的目录
-     */
-    private void createDirectories() {
         try {
             Files.createDirectories(Paths.get(BASE_DIR));
             Files.createDirectories(Paths.get(BASE_DIR, TEMP_RELATED_PATH));
@@ -104,7 +94,7 @@ public class FileManagementService {
      * @param originalFileName 原始文件名
      * @return 完整文件路径
      */
-    private Path getCompleteFilePath(String filePath, UUID fileId, String originalFileName) {
+    public Path getCompleteFilePath(String filePath, UUID fileId, String originalFileName) {
         String actualFileName = getActualFileName(fileId, originalFileName);
         return Paths.get(BASE_DIR, filePath, actualFileName);
     }

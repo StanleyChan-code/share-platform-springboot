@@ -31,6 +31,9 @@ public class DatasetVersionDto {
     private String rejectReason;
     private Instant approvedAt;
     private UserDto supervisor;
+    
+    private Integer recordCount;
+    private Integer variableCount;
 
     public static DatasetVersionDto fromEntity(DatasetVersion version, User supervisor) {
         if (version == null) {
@@ -51,6 +54,9 @@ public class DatasetVersionDto {
         dto.approved = version.getApproved();
         dto.approvedAt = version.getApprovedAt();
         dto.rejectReason = version.getRejectReason();
+        
+        dto.recordCount = version.getRecordCount();
+        dto.variableCount = version.getVariableCount();
 
         dto.supervisor = UserDto.fromEntity(supervisor);
 

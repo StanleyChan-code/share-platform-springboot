@@ -16,11 +16,21 @@
 # 研究成果审核员令牌
 @researchOutputApproverToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDMwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
 
+### 获取公开的已审核研究成果列表（无需登录）
+# @name getPublicApprovedResearchOutputs
+GET http://localhost:8080/api/research-outputs/public?page=0&size=10&sortBy=createdAt&sortDir=desc
+
+### 获取PubMed数据
+@pubMedId=41261131
+GET http://localhost:8080/api/research-outputs/pubmed/{{pubMedId}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
 ### 普通用户提交新的研究成果
 # @name createResearchOutput
 POST http://localhost:8080/api/research-outputs
 Content-Type: application/json
-#Authorization: Bearer {{userToken}}
+Authorization: Bearer {{userToken}}
 
 {
   "datasetId": "{{datasetId}}",

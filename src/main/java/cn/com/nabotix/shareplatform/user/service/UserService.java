@@ -5,6 +5,7 @@ import cn.com.nabotix.shareplatform.user.entity.UserAuthorityEntity;
 import cn.com.nabotix.shareplatform.security.UserAuthority;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
 import cn.com.nabotix.shareplatform.user.repository.UserAuthorityRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,18 +20,13 @@ import java.util.UUID;
  *
  * @author 陈雍文
  */
+@RequiredArgsConstructor
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final UserAuthorityRepository userAuthorityRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.userAuthorityRepository = userAuthorityRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
     
     /**
      * 保存用户

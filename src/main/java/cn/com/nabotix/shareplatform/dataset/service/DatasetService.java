@@ -8,17 +8,14 @@ import cn.com.nabotix.shareplatform.researchsubject.entity.ResearchSubject;
 import cn.com.nabotix.shareplatform.researchsubject.repository.ResearchSubjectRepository;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
-import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
-import jakarta.persistence.Transient;
-import lombok.NonNull;
+import cn.com.nabotix.shareplatform.popularity.service.PopularityService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,35 +27,22 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DatasetService {
 
     private final DatasetRepository datasetRepository;
     private final ResearchSubjectRepository researchSubjectRepository;
     private final UserRepository userRepository;
     private final DatasetVersionService datasetVersionService;
-
-    @Autowired
-    public DatasetService(DatasetRepository datasetRepository,
-                          ResearchSubjectRepository researchSubjectRepository,
-                          UserRepository userRepository,
-                          DatasetVersionService datasetVersionService) {
-        this.datasetRepository = datasetRepository;
-        this.researchSubjectRepository = researchSubjectRepository;
-        this.userRepository = userRepository;
-        this.datasetVersionService = datasetVersionService;
-    }
-
+    private final PopularityService popularityService;
 
     /**
      * 根据ID和用户机构ID获取数据集
      *
      * @param id                数据集ID
      * @param userInstitutionId 用户机构ID，当未空时则滤出公开可见的数据集
+     * @param loadTimeline      是否加载随访数据集
      */
-    public PublicDatasetDto getDatasetByIdAndUserInstitution(UUID id, UUID userInstitutionId) {
-        return getDatasetByIdAndUserInstitution(id, userInstitutionId, false);
-    }
-
     public PublicDatasetDto getDatasetByIdAndUserInstitution(UUID id, UUID userInstitutionId, boolean loadTimeline) {
         return datasetRepository.findById(id)
                 .filter(d -> checkPublicDatasetAssessPermission(d, userInstitutionId))
@@ -68,60 +52,43 @@ public class DatasetService {
                 .orElse(null);
     }
 
-    /**
-     * 获取所有公开的顶层数据集（parentDatasetId为空）
-     */
-    public Page<PublicDatasetDto> getAllPublicTopLevelDatasets(Pageable pageable) {
-        Page<Dataset> datasetPage = datasetRepository.findPublicVisibleTopLevelDatasets(pageable);
-        List<PublicDatasetDto> dtoList = datasetPage.getContent().stream()
-                .map(this::convertToPublicDto)
-                .collect(Collectors.toList());
-        return new PageImpl<>(dtoList, pageable, datasetPage.getTotalElements());
-    }
 
     /**
-     * 获取机构内可见的顶层数据集列表（parentDatasetId为空）
-     * 返回完全公开的顶层数据集 + 已批准但未公开的用户机构能申请的顶层数据集
+     * 获取公开和机构内可见的顶层数据集列表（parentDatasetId为空）
+     * 机构内用户：能看到已批准且已发布数据集 + 已批准但未公开且数据集允许申请的机构用户
+     * 匿名用户（userInstitutionId为null）：只能看到已批准且已发布数据集
      */
-    public Page<PublicDatasetDto> getAllInstitutionVisibleTopLevelDatasets(UUID institutionId, Pageable pageable) {
+    public Page<PublicDatasetDto> getAllPublicTopLevelDatasets(UUID institutionId, Pageable pageable) {
         // 使用新的查询方法，直接在数据库层面合并查询并分页
-        Page<Dataset> datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
+        Page<Dataset> datasetPage;
+        if (institutionId == null) {
+            datasetPage = datasetRepository.findPublicVisibleTopLevelDatasets(pageable);
+        } else {
+            datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
+        }
         List<PublicDatasetDto> dtoList = datasetPage.getContent().stream()
                 .map(this::convertToPublicDto)
                 .collect(Collectors.toList());
         return new PageImpl<>(dtoList, pageable, datasetPage.getTotalElements());
     }
 
-    /**
-     * 获取时间轴形式的公开数据集（仅包含没有父数据集的数据集）
-     * 并附带其子数据集（随访数据集）
-     * 匿名用户：只能看到已批准且已发布的数据集
-     * 机构内用户：能看到已批准且已发布的数据集 + 已批准但未公开的本机构数据集
-     */
-    public Page<PublicDatasetDto> getTimelinePublicDatasets(Pageable pageable) {
-        // 获取公开可见的顶层数据集（分页）
-        Page<Dataset> datasetPage = datasetRepository.findPublicVisibleTopLevelDatasets(pageable);
-
-        // 转换为时间轴DTO（包含子数据集）
-        List<PublicDatasetDto> timelineDtoList = datasetPage.getContent().stream()
-                .map(dataset -> convertToTimelinePublicDto(dataset, null))
-                .sorted(Comparator.comparing(PublicDatasetDto::getStartDate))
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(timelineDtoList, pageable, datasetPage.getTotalElements());
-    }
 
     /**
-     * 获取时间轴形式的机构可见数据集（仅包含没有父数据集的数据集）
-     * 并附带其子数据集（随访数据集）
-     * 机构内用户：能看到已批准且已发布的数据集 + 已批准但未公开的本机构数据集
+     * 根据学科领域ID获取数据集（分页）
+     * 机构内用户：能看到已批准且已发布数据集 + 已批准但未公开且数据集允许申请的机构用户
+     * 匿名用户（userInstitutionId为null）：只能看到已批准且已发布数据集
      */
-    public Page<PublicDatasetDto> getTimelineInstitutionVisibleDatasets(UUID institutionId, Pageable pageable) {
-        Page<Dataset> datasetPage = datasetRepository.findPublicOrInstitutionVisibleTopLevelDatasets(institutionId, pageable);
-        List<PublicDatasetDto> timelineDtoList = datasetPage.getContent().stream()
-                .map(dataset -> convertToTimelinePublicDto(dataset, institutionId))
+    public Page<PublicDatasetDto> getAllDatasetsBySubjectAreaId(UUID subjectAreaId, UUID institutionId, Pageable pageable) {
+        Page<Dataset> datasetPage;
+        if (institutionId == null) {
+            datasetPage = datasetRepository.findPublicVisibleTopLevelDatasetsBySubjectAreaId(subjectAreaId, pageable);
+        } else {
+            datasetPage = datasetRepository.findPublicVisibleTopLevelDatasetsBySubjectAreaId(subjectAreaId, institutionId, pageable);
+        }
+        List<PublicDatasetDto> dtoList = datasetPage.getContent().stream()
+                .map(this::convertToPublicDto)
                 .collect(Collectors.toList());
-        return new PageImpl<>(timelineDtoList, pageable, datasetPage.getTotalElements());
+        return new PageImpl<>(dtoList, pageable, datasetPage.getTotalElements());
     }
 
     /**
@@ -132,22 +99,36 @@ public class DatasetService {
 
         // 获取该数据集的子数据集（随访数据集）
         if (dto.getId() != null) {
-            List<PublicDatasetDto> children = datasetRepository.findByParentDatasetId(dto.getId()).stream()
-                    .filter(child -> checkPublicDatasetAssessPermission(child, userInstitutionId))
-                    .sorted(Comparator.comparing(Dataset::getStartDate))
-                    .map(this::convertToPublicDto)
-                    .toList();
-
-            dto.setFollowUpDatasets(children);
+            dto.setFollowUpDatasets(getAllDatasetsByParentDatasetId(dto.getId(), userInstitutionId));
         }
 
         return dto;
     }
 
     /**
+     * 获取随访数据集（不含父数据集）
+     * 机构内用户：能看到已批准且已发布数据集 + 已批准但未公开且数据集允许申请的机构用户
+     * 匿名用户（userInstitutionId为null）：只能看到已批准且已发布数据集
+     *
+     * @param parentDatasetId   父数据集ID
+     * @param userInstitutionId 用户机构ID，当未空时则滤出公开可见的数据集
+     */
+    public List<PublicDatasetDto> getAllDatasetsByParentDatasetId(UUID parentDatasetId, UUID userInstitutionId) {
+        return datasetRepository.findByParentDatasetId(parentDatasetId).stream()
+                .filter(child -> checkPublicDatasetAssessPermission(child, userInstitutionId))
+                .sorted(Comparator.comparing(Dataset::getStartDate))
+                .map(this::convertToPublicDto)
+                .toList();
+    }
+
+    /**
      * 将Dataset实体转换为PublicDatasetDto
      */
-    public PublicDatasetDto convertToPublicDto(@NonNull Dataset dataset) {
+    public PublicDatasetDto convertToPublicDto(Dataset dataset) {
+        if (dataset == null || dataset.getId() == null) {
+            return null;
+        }
+
         // 设置学科领域信息
         ResearchSubject subjectArea = dataset.getSubjectAreaId() != null ?
                 researchSubjectRepository.findById(dataset.getSubjectAreaId()).orElse(null) : null;
@@ -163,12 +144,20 @@ public class DatasetService {
                         .map(datasetVersionService::convertToDto)
                         .toList();
 
+        // 从Redis获取实时热度数据
+        Long realTimeSearchCount = popularityService.getDatasetPopularity(dataset.getId());
+        if (realTimeSearchCount != null) {
+            dataset.setSearchCount(realTimeSearchCount.intValue());
+        }
+
         return PublicDatasetDto.fromEntity(dataset, subjectArea, provider, versionsDtos);
     }
 
 
     /**
      * 查看公开数据集的权限控制
+     * 机构内用户：能看到已批准且已发布数据集 + 已批准但未公开且数据集允许申请的机构用户
+     * 匿名用户（userInstitutionId为null）：只能看到已批准且已发布数据集
      */
     public boolean checkPublicDatasetAssessPermission(Dataset dataset, UUID userInstitutionId) {
         if (dataset == null || dataset.getId() == null) {
@@ -182,6 +171,7 @@ public class DatasetService {
         if (datasetInstitutionId == null) {
             return false;
         }
+        // 未审核，则返回false
         if (datasetVersionService.findLatestApprovedVersionByDatasetId(dataset.getId()) == null) {
             return false;
         }
@@ -197,100 +187,5 @@ public class DatasetService {
         // 如果不是公开访问，则判断用户当前机构id是否在允许申请的机构列表中
         List<UUID> applicationInstitutionIds = dataset.getApplicationInstitutionIds();
         return applicationInstitutionIds != null && applicationInstitutionIds.contains(userInstitutionId);
-    }
-
-
-    /**
-     * 获取所有数据集
-     */
-    public List<Dataset> getAllDatasets() {
-        return datasetRepository.findAll();
-    }
-
-    /**
-     * 根据ID获取数据集
-     */
-    public Dataset getDatasetById(UUID id) {
-        if (id == null) {
-            return null;
-        }
-        return datasetRepository.findById(id).orElse(null);
-    }
-
-    /**
-     * 根据机构ID获取数据集
-     */
-    public List<Dataset> getDatasetsByInstitutionId(UUID institutionId) {
-        return datasetRepository.findByInstitutionId(institutionId);
-    }
-
-    /**
-     * 根据提供者ID获取数据集
-     */
-    public List<Dataset> getDatasetsByProviderId(UUID providerId) {
-        return datasetRepository.findByProviderId(providerId);
-    }
-
-    /**
-     * 创建新数据集
-     */
-    @Transient
-    public Dataset createDataset(Dataset dataset, DatasetVersion firstVersion) {
-        // 设置创建和更新时间
-        dataset.setCreatedAt(Instant.now());
-        dataset.setUpdatedAt(Instant.now());
-
-        Dataset savedDataset = datasetRepository.save(dataset);
-
-        // 创建第一个版本
-        firstVersion.setDatasetId(savedDataset.getId());
-        firstVersion.setCreatedAt(Instant.now());
-        datasetVersionService.save(firstVersion);
-
-        return savedDataset;
-    }
-
-    /**
-     * 更新现有数据集
-     */
-    public Dataset updateDataset(UUID id, Dataset datasetDetails) {
-        Dataset dataset = datasetRepository.findById(id).orElse(null);
-        if (dataset != null) {
-            // 更新字段
-            dataset.setTitleCn(datasetDetails.getTitleCn());
-            dataset.setDescription(datasetDetails.getDescription());
-            dataset.setType(datasetDetails.getType());
-            dataset.setCategory(datasetDetails.getCategory());
-            dataset.setProviderId(datasetDetails.getProviderId());
-            dataset.setDatasetLeader(datasetDetails.getDatasetLeader());
-            dataset.setPrincipalInvestigator(datasetDetails.getPrincipalInvestigator());
-            dataset.setDataCollectionUnit(datasetDetails.getDataCollectionUnit());
-            dataset.setStartDate(datasetDetails.getStartDate());
-            dataset.setEndDate(datasetDetails.getEndDate());
-            dataset.setRecordCount(datasetDetails.getRecordCount());
-            dataset.setVariableCount(datasetDetails.getVariableCount());
-            dataset.setKeywords(datasetDetails.getKeywords());
-            dataset.setSubjectAreaId(datasetDetails.getSubjectAreaId());
-            dataset.setSamplingMethod(datasetDetails.getSamplingMethod());
-            dataset.setPublished(datasetDetails.getPublished());
-            dataset.setSearchCount(datasetDetails.getSearchCount());
-            dataset.setShareAllData(datasetDetails.getShareAllData());
-            dataset.setContactPerson(datasetDetails.getContactPerson());
-            dataset.setContactInfo(datasetDetails.getContactInfo());
-            dataset.setDemographicFields(datasetDetails.getDemographicFields());
-            dataset.setOutcomeFields(datasetDetails.getOutcomeFields());
-            dataset.setFirstPublishedDate(datasetDetails.getFirstPublishedDate());
-            dataset.setCurrentVersionDate(datasetDetails.getCurrentVersionDate());
-            dataset.setParentDatasetId(datasetDetails.getParentDatasetId());
-            dataset.setInstitutionId(datasetDetails.getInstitutionId());
-            dataset.setApplicationInstitutionIds(datasetDetails.getApplicationInstitutionIds());
-
-            // 更新修改时间
-            dataset.setUpdatedAt(Instant.now());
-
-            // 保存更新后的数据集
-            return datasetRepository.save(dataset);
-        }
-        return null;
     }
 }

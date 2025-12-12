@@ -8,10 +8,10 @@
 
 **请求参数**:
 
-| 参数名        | 类型   | 必填 | 描述                           |
-| ------------- | ------ | ---- | ------------------------------ |
-| phone         | String | 是   | 手机号码                       |
-| businessType  | String | 否   | 业务类型，默认为 LOGIN         |
+| 参数名          | 类型     | 必填 | 描述             |
+|--------------|--------|----|----------------|
+| phone        | String | 是  | 手机号码           |
+| businessType | String | 否  | 业务类型，默认为 LOGIN |
 
 **businessType 可选值**:
 - LOGIN: 登录
@@ -55,12 +55,12 @@
 
 **请求参数**:
 
-| 参数名           | 类型   | 必填 | 描述                                    |
-| ---------------- | ------ | ---- | --------------------------------------- |
-| phone            | String | 是   | 手机号                                  |
-| password         | String | 否   | 密码（密码登录时必填）                  |
-| verificationCode | String | 否   | 验证码（验证码登录时必填）              |
-| loginType        | String | 是   | 登录类型：PASSWORD 或 VERIFICATION_CODE |
+| 参数名              | 类型     | 必填 | 描述                                |
+|------------------|--------|----|-----------------------------------|
+| phone            | String | 是  | 手机号                               |
+| password         | String | 否  | 密码（密码登录时必填）                       |
+| verificationCode | String | 否  | 验证码（验证码登录时必填）                     |
+| loginType        | String | 是  | 登录类型：PASSWORD 或 VERIFICATION_CODE |
 
 **响应示例**:
 ```json
@@ -85,7 +85,7 @@
 {
   "phone": "13800138000",
   "verificationCode": "123456",
-  "username": "testuser",
+  "username": "testUser",
   "realName": "测试用户",
   "email": "test@example.com",
   "password": "password123"
@@ -94,14 +94,14 @@
 
 **请求参数**:
 
-| 参数名           | 类型   | 必填 | 描述         |
-| ---------------- | ------ | ---- | ------------ |
-| phone            | String | 是   | 手机号码     |
-| verificationCode | String | 是   | 验证码       |
-| username         | String | 是   | 用户名       |
-| realName         | String | 是   | 真实姓名     |
-| email            | String | 否   | 邮箱地址     |
-| password         | String | 是   | 密码         |
+| 参数名              | 类型     | 必填 | 描述   |
+|------------------|--------|----|------|
+| phone            | String | 是  | 手机号码 |
+| verificationCode | String | 是  | 验证码  |
+| username         | String | 是  | 用户名  |
+| realName         | String | 是  | 真实姓名 |
+| email            | String | 否  | 邮箱地址 |
+| password         | String | 是  | 密码   |
 
 **响应示例**:
 ```json
@@ -110,7 +110,7 @@
   "message": "注册成功",
   "data": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "username": "testuser",
+    "username": "testUser",
     "realName": "测试用户",
     "phone": "13800138000",
     "email": "test@example.com",

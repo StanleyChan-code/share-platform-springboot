@@ -1,4 +1,4 @@
-@phone = 13800000101
+@phone = 13800138000
 @phone1 = 13812345678
 @admin_token = eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgxMjM0NTY3OCIsImlhdCI6MTc2NDY3MDY5OSwiZXhwIjoxNzY2NTM0Njk5fQ.lk99LWqbRVgLVszrSTowyVqAjYH91voDzf8O81MfSuq35KGYsuCb1uUOaqXo3zvJ
 
@@ -31,7 +31,7 @@ Content-Type: application/json
 
 {
   "phone": {{phone}},
-  "verificationCode": "193689",
+  "verificationCode": "216949",
   "loginType": "VERIFICATION_CODE"
 }
 

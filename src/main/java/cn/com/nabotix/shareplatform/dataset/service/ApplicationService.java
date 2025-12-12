@@ -13,6 +13,7 @@ import cn.com.nabotix.shareplatform.security.AuthorityUtil;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
@@ -39,19 +41,6 @@ public class ApplicationService {
     private final UserRepository userRepository;
     private final DatasetVersionService datasetVersionService;
     private final FileManagementService fileManagementService;
-
-    @Autowired
-    public ApplicationService(ApplicationRepository applicationRepository,
-                              DatasetRepository datasetRepository,
-                              UserRepository userRepository,
-                              DatasetVersionService datasetVersionService,
-                              FileManagementService fileManagementService) {
-        this.applicationRepository = applicationRepository;
-        this.datasetRepository = datasetRepository;
-        this.userRepository = userRepository;
-        this.datasetVersionService = datasetVersionService;
-        this.fileManagementService = fileManagementService;
-    }
 
     /**
      * 创建数据集申请

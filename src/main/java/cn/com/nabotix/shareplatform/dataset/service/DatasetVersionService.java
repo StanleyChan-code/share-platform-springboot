@@ -3,9 +3,14 @@ package cn.com.nabotix.shareplatform.dataset.service;
 import cn.com.nabotix.shareplatform.dataset.dto.DatasetVersionDto;
 import cn.com.nabotix.shareplatform.dataset.entity.DatasetVersion;
 import cn.com.nabotix.shareplatform.dataset.repository.DatasetVersionRepository;
+import cn.com.nabotix.shareplatform.dataset.statistic.DatasetStatisticDto;
+import cn.com.nabotix.shareplatform.dataset.statistic.DatasetStatisticService;
+import cn.com.nabotix.shareplatform.dataset.statistic.dto.DataAnalysisRequestDto;
+import cn.com.nabotix.shareplatform.dataset.statistic.dto.DataAnalysisResponseDto;
 import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,18 +25,13 @@ import java.util.*;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DatasetVersionService {
 
     private final DatasetVersionRepository datasetVersionRepository;
     private final UserService userService;
     private final FileManagementService fileManagementService;
-
-    public DatasetVersionService(DatasetVersionRepository datasetVersionRepository, UserService userService, FileManagementService fileManagementService) {
-        this.datasetVersionRepository = datasetVersionRepository;
-        this.userService = userService;
-        this.fileManagementService = fileManagementService;
-    }
-
+    private final DatasetStatisticService datasetStatisticService;
 
     /**
      * 根据数据集ID获取所有版本
@@ -116,6 +116,20 @@ public class DatasetVersionService {
      */
     public DatasetVersion save(DatasetVersion version) {
         DatasetVersion save = datasetVersionRepository.save(version);
+
+        // 将数据文件分析
+        DataAnalysisRequestDto dataAnalysisRequestDto = new DataAnalysisRequestDto(
+                version.getFileRecordId(),
+                version.getDataDictRecordId()
+        );
+        DataAnalysisResponseDto dataAnalysisResponseDto = datasetStatisticService.analyzeData(dataAnalysisRequestDto);
+        DatasetStatisticDto datasetStatisticDto = new DatasetStatisticDto();
+        datasetStatisticDto.setDatasetVersionId(save.getId());
+        datasetStatisticDto.setVersion(dataAnalysisResponseDto.getVersion());
+        datasetStatisticDto.setVariables(dataAnalysisResponseDto.getVariables());
+        datasetStatisticDto.setStatisticalFiles(dataAnalysisResponseDto.getStatisticalFiles());
+        datasetStatisticService.saveDatasetStatistic(datasetStatisticDto);
+
         moveDatasetFiles(save);
         return save;
     }

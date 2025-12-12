@@ -4,6 +4,7 @@ import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.entity.UserAuthorityEntity;
 import cn.com.nabotix.shareplatform.user.repository.UserRepository;
 import cn.com.nabotix.shareplatform.user.repository.UserAuthorityRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,16 +24,12 @@ import java.util.UUID;
  *
  * @author 陈雍文
  */
+@RequiredArgsConstructor
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final UserAuthorityRepository userAuthorityRepository;
-
-    public UserDetailsServiceImpl(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository) {
-        this.userRepository = userRepository;
-        this.userAuthorityRepository = userAuthorityRepository;
-    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

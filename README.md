@@ -17,8 +17,11 @@
 - [用户认证接口](AUTH_API.md) - 用户注册、登录等相关接口
 - [用户管理接口](USER_MANAGE_API.md) - 用户信息查询和管理接口
 - [数据集管理接口](DATASET_API.md) - 数据集的查询、创建和管理接口
+- [数据集统计接口](DATASET_STATISTIC_API.md) - 数据集统计信息管理接口
 - [机构管理接口](INSTITUTION_API.md) - 机构信息的查询和管理接口
 - [研究学科接口](RESEARCH_SUBJECT_API.md) - 研究学科的查询和管理接口
+- [热度统计接口](POPULARITY_API.md) - 数据集和研究学科的热度统计接口
+- [研究成果接口](RESEARCH_OUTPUT_API.md) - 研究成果的提交、查询和管理接口
 - [数据集申请接口](APPLICATION_API.md) - 数据集申请和审批相关接口
 - [枚举类型和权限说明](ENUMS_AND_PERMISSIONS.md) - 系统使用的枚举类型和权限角色说明
 
@@ -55,5 +58,7 @@ cd share-platform
 ```
 
 ### 配置
+
+部署Redis时必须设定每天持久化到本地，以保证热度数据不丢失。
 
 修改 `src/main/resources/application.properties` 文件来配置数据库连接、JWT密钥等参数。

@@ -1,6 +1,7 @@
 package cn.com.nabotix.shareplatform.researchoutput.controller;
 
 import cn.com.nabotix.shareplatform.common.dto.ApiResponseDto;
+import cn.com.nabotix.shareplatform.common.service.AuditLogService;
 import cn.com.nabotix.shareplatform.researchoutput.entity.ResearchOutput;
 import cn.com.nabotix.shareplatform.researchoutput.service.ResearchOutputService;
 import cn.com.nabotix.shareplatform.researchoutput.dto.ResearchOutputApprovalRequestDto;
@@ -9,8 +10,9 @@ import cn.com.nabotix.shareplatform.security.UserAuthority;
 import cn.com.nabotix.shareplatform.security.AuthorityUtil;
 import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 import cn.com.nabotix.shareplatform.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 研究成果管理控制器
@@ -31,17 +31,13 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/manage/research-outputs")
 public class ResearchOutputManageController {
 
     private final ResearchOutputService researchOutputService;
     private final UserService userService;
-
-    @Autowired
-    public ResearchOutputManageController(ResearchOutputService researchOutputService, UserService userService) {
-        this.researchOutputService = researchOutputService;
-        this.userService = userService;
-    }
+    private final AuditLogService auditLogService;
 
     /**
      * 获取所有管理的研究成果列表
@@ -158,7 +154,8 @@ public class ResearchOutputManageController {
     @PreAuthorize("hasAnyAuthority('PLATFORM_ADMIN', 'INSTITUTION_SUPERVISOR', 'RESEARCH_OUTPUT_APPROVER')")
     public ResponseEntity<ApiResponseDto<ResearchOutputDto>> updateResearchOutputApprovalStatus(
             @PathVariable UUID id,
-            @RequestBody ResearchOutputApprovalRequestDto approvalRequest) {
+            @RequestBody ResearchOutputApprovalRequestDto approvalRequest,
+            HttpServletRequest request) {
 
         ResearchOutput output = researchOutputService.getResearchOutputById(id);
 
@@ -186,6 +183,17 @@ public class ResearchOutputManageController {
             }
 
             ResearchOutputDto dto = researchOutputService.convertToDto(updatedOutput);
+
+            // 记录审核操作到审计日志
+            String action = approvalRequest.getApproved() == null ?
+                    "RESET_RESEARCH_OUTPUT_APPROVAL_STATUS" :
+                    approvalRequest.getApproved() ? "APPROVE_RESEARCH_OUTPUT" : "REJECT_RESEARCH_OUTPUT";
+
+            Map<String, Object> additionalParams = new HashMap<>();
+            if (approvalRequest.getRejectionReason() != null) {
+                additionalParams.put("rejectionReason", approvalRequest.getRejectionReason());
+            }
+            auditLogService.logApprovalAction(action, output.getId(), output.getTitle(), additionalParams, request.getRemoteAddr());
 
             String message = approvalRequest.getApproved() == null ?
                     "研究成果审核状态重置" :

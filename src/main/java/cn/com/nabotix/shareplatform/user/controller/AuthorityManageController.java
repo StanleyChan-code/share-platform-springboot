@@ -6,6 +6,7 @@ import cn.com.nabotix.shareplatform.security.UserDetailsImpl;
 import cn.com.nabotix.shareplatform.user.dto.UserAuthorityUpdateRequestDto;
 import cn.com.nabotix.shareplatform.user.entity.User;
 import cn.com.nabotix.shareplatform.user.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -19,15 +20,12 @@ import java.util.stream.Collectors;
  * 权限管理控制器
  * 提供权限查询和管理接口
  */
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/manage/authorities")
 public class AuthorityManageController {
 
     private final UserService userService;
-
-    public AuthorityManageController(UserService userService) {
-        this.userService = userService;
-    }
 
     /**
      * 获取系统所有权限列表

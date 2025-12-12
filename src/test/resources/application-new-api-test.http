@@ -1,4 +1,4 @@
-@applicationId=1771533d-4de2-404f-93df-546730f1cbc5
+@applicationId=a1afaada-a001-4f88-98bc-a777236ad06a
 @datasetVersionId=9e4a7f84-1035-40c0-9f84-e23432e217a7
 
 # 用户令牌（普通数据集用户）
@@ -15,6 +15,9 @@
 
 # 数据集申请审核员令牌
 @datasetApproverToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDAwMDMwMCIsImlhdCI6MTc2NDgxOTE4NCwiZXhwIjoxNzY2NjgzMTg0fQ.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef
+
+# 没有权限的用户的令牌
+@noPermissionUserToken=eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMzgwMDEzODAwMCIsImlhdCI6MTc2NTU1MzAxMSwiZXhwIjoxNzY3NDE3MDExfQ.CgYCrGEm-PmQWwdEXIBNVpb2Sv1gN9F3irgtp5Ooov5oYyOyOfv8NTaxIX3bjTk8
 
 ### 用户申请数据集版本
 POST http://localhost:8080/api/applications

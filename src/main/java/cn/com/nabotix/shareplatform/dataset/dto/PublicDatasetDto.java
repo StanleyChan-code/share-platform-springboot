@@ -36,8 +36,6 @@ public class PublicDatasetDto {
     private String principalInvestigator;
     private String dataCollectionUnit;
 
-    private Integer recordCount;
-    private Integer variableCount;
     private List<String> keywords;
     private SubjectAreaDto subjectArea;
     private String category;
@@ -71,6 +69,23 @@ public class PublicDatasetDto {
     // 数据集版本列表
     private List<DatasetVersionDto> versions;
 
+    public static PublicDatasetDto fromEntity(Dataset dataset) {
+        if (dataset == null) {
+            return null;
+        }
+
+
+
+        UUID subjectAreaId = dataset.getSubjectAreaId();
+        ResearchSubject subjectArea = new ResearchSubject();
+        subjectArea.setId(subjectAreaId);
+
+        UUID providerId = dataset.getProviderId();
+        User provider = new User();
+        provider.setId(providerId);
+
+        return fromEntity(dataset, subjectArea, provider, null);
+    }
 
     public static PublicDatasetDto fromEntity(Dataset dataset, ResearchSubject subjectArea, User provider, List<DatasetVersionDto> datasetVersionDtos) {
         if (dataset == null) {
@@ -90,8 +105,6 @@ public class PublicDatasetDto {
         publicDatasetDto.setDatasetLeader(dataset.getDatasetLeader());
         publicDatasetDto.setPrincipalInvestigator(dataset.getPrincipalInvestigator());
         publicDatasetDto.setDataCollectionUnit(dataset.getDataCollectionUnit());
-        publicDatasetDto.setRecordCount(dataset.getRecordCount());
-        publicDatasetDto.setVariableCount(dataset.getVariableCount());
         publicDatasetDto.setKeywords(dataset.getKeywords());
         publicDatasetDto.setSubjectArea(SubjectAreaDto.fromEntity(subjectArea));
         publicDatasetDto.setPublished(dataset.getPublished());

@@ -4,8 +4,8 @@ import cn.com.nabotix.shareplatform.filemanagement.dto.*;
 import cn.com.nabotix.shareplatform.filemanagement.entity.FileRecord;
 import cn.com.nabotix.shareplatform.filemanagement.service.FileManagementService;
 import cn.com.nabotix.shareplatform.security.AuthorityUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,16 +21,12 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/files")
 @PreAuthorize("isAuthenticated()")
 public class FileManagementController {
 
     private final FileManagementService fileManagementService;
-
-    @Autowired
-    public FileManagementController(FileManagementService fileManagementService) {
-        this.fileManagementService = fileManagementService;
-    }
 
     /**
      * 上传文件接口
